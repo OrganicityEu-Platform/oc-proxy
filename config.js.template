@@ -46,6 +46,11 @@ config.public_paths = [];
 // options: oauth2/keystone
 config.tokens_engine = 'oauth2';
 
+// Used, when tokens_engine = 'keycloak'
+config.keycloak = {
+	cert : 'accounts.organicity.eu.cert.pem'
+}
+
 config.magic_key = undefined;
 
 module.exports = config;

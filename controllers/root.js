@@ -11,7 +11,7 @@ var Root = (function() {
     var tokens_cache = {};
 
     var pep = function(req, res) {
-    	
+
     	var auth_token = req.headers['x-auth-token'];
 
         if (auth_token === undefined && req.headers['authorization'] !== undefined) {
@@ -87,7 +87,12 @@ var Root = (function() {
 
             log.info('Access-token OK. Redirecting to app...');
 
-            if (config.tokens_engine === 'keystone') {
+            if (config.tokens_engine === 'keycloak') {
+                req.headers['X-Nick-Name'] = user_info.client_id;
+                req.headers['X-Display-Name'] = user_info.aud;
+                //req.headers['X-Roles'] = user_info.;
+                //req.headers['X-Organizations'] = user_info.;
+            } else if (config.tokens_engine === 'keystone') {
                 req.headers['X-Nick-Name'] = user_info.token.user.id;
                 req.headers['X-Display-Name'] = user_info.token.user.id;
                 req.headers['X-Roles'] = user_info.token.roles;

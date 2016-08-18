@@ -4,14 +4,15 @@
   "description": "PEP oauth2 authentication proxy for FIWARE GE services",
   "author": "GING DIT UPM",
   "dependencies": {
-    "express": "4.x",
-    "xml2json": "0.4.0",
-    "log4js": "0.6.x",
-    "escape-html": "1.0.3",
-    "xmlhttprequest": "1.8.0",
     "errorhandler": "1.x",
-    "should":"~4.0.4",
-    "mocha":"~1.20.1"
+    "escape-html": "1.0.3",
+    "express": "4.x",
+    "jsonwebtoken": "^7.1.9",
+    "log4js": "0.6.x",
+    "mocha": "~1.20.1",
+    "should": "~4.0.4",
+    "xml2json": "0.4.0",
+    "xmlhttprequest": "1.8.0"
   },
   "repository": {
     "type": "git",

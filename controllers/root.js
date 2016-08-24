@@ -12,6 +12,29 @@ var Root = (function() {
 
     var pep = function(req, res) {
 
+        var body = req.body.toString('utf8');
+
+        var options = {
+            host: config.app_host,
+            port: config.app_port,
+            path: req.url,
+            method: req.method,
+            headers: proxy.getClientIp(req, req.headers)
+        };
+
+        // Add header
+        options.headers['x-organicity-foo'] = 'OC-FOO';
+
+        // Handle body
+        if(req.method === 'POST' && body) {
+          console.log('Body:', body);
+        }
+
+        proxy.sendData('http', options, body, res);
+        return;
+
+//      Everything behind is disabled
+
     	var auth_token = req.headers['x-auth-token'];
 
         if (auth_token === undefined && req.headers['authorization'] !== undefined) {
@@ -42,7 +65,7 @@ var Root = (function() {
     		IDM.check_token(auth_token, function (user_info) {
 
                 if (config.azf.enabled) {
-                    
+
                     AZF.check_permissions(auth_token, user_info, req, function () {
 
                         redir_request(req, res, user_info);
@@ -74,7 +97,7 @@ var Root = (function() {
                     res.send(503, 'Error in IDM communication');
                 }
     		}, tokens_cache);
-    	};	
+    	};
     };
 
     var public = function(req, res) {

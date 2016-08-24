@@ -23,7 +23,7 @@ var app = express();
 
 app.use (function(req, res, next) {
     var bodyChunks = [];
-    req.on('data', function(chunk) { 
+    req.on('data', function(chunk) {
        bodyChunks.push(chunk);
     });
 
@@ -69,8 +69,9 @@ if (config.tokens_engine === 'keystone' && config.azf.enabled === true) {
     return;
 }
 
-log.info('Starting PEP proxy in port ' + port + '. Keystone authentication ...');
+log.info('Starting PEP proxy in port ' + port + '.');
 
+/*
 IDM.authenticate (function (token) {
 
     log.info('Success authenticating PEP proxy. Proxy Auth-token: ', token);
@@ -78,6 +79,7 @@ IDM.authenticate (function (token) {
 }, function (status, e) {
     log.error('Error in keystone communication', e);
 });
+*/
 
 if (config.https.enabled === true) {
     var options = {

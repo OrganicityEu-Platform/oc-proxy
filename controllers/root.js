@@ -18,7 +18,7 @@ var Root = (function() {
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
         options.headers['X-organicity-call1'] = 'OKAY';
-        call2(req, res, options);
+        call2(req, res, options, body);
       });
     };
 
@@ -35,7 +35,7 @@ var Root = (function() {
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
         options.headers['X-organicity-call2'] = 'OKAY';
-        call3(req, res, options);
+        call3(req, res, options, body);
       });
 
     };
@@ -52,7 +52,7 @@ var Root = (function() {
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
         options.headers['X-organicity-call3'] = 'OKAY';
-        call4(req, res, options);
+        call4(req, res, options, body);
       });
 
     };
@@ -69,7 +69,7 @@ var Root = (function() {
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
         options.headers['X-organicity-call4'] = 'OKAY';
-        call5(req, res, options);
+        call5(req, res, options, body);
       });
     };
 
@@ -77,8 +77,10 @@ var Root = (function() {
     var call5 = function(req, res, options, body) {
 
       // Handle body
+
       if(req.method === 'POST' && body) {
-        console.log('Body:', body);
+        var b = JSON.parse(body);
+        console.log('Body:', b);
       }
 
       call6(req, res, options, body);

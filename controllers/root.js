@@ -9,9 +9,9 @@ var Root = (function() {
     var call1 = function(req, res, options, body) {
 
       var optionsCall = {
-          protocol: 'http',
-          host: 'pro.server.organicity.eu',
-          port: '80',
+          protocol: 'https',
+          host: 'accounts.organicity.eu',
+          port: '443',
           path: '/',
           method: 'GET'
       };
@@ -26,9 +26,9 @@ var Root = (function() {
     var call2 = function(req, res, options, body) {
 
       var optionsCall = {
-          protocol: 'http',
-          host: 'pro.server.organicity.eu',
-          port: '80',
+          protocol: 'https',
+          host: 'itm.uni-luebeck.de',
+          port: '443',
           path: '/',
           method: 'GET'
       };

@@ -12,6 +12,7 @@ var Root = (function() {
         var body = req.body.toString('utf8');
 
         var options = {
+            protocol: 'http',
             host: config.app_host,
             port: config.app_port,
             path: req.url,
@@ -27,7 +28,7 @@ var Root = (function() {
           console.log('Body:', body);
         }
 
-        proxy.sendData('http', options, body, res);
+        proxy.sendData(options, body, res);
         return;
 
     };

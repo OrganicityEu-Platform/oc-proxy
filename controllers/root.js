@@ -1,15 +1,27 @@
 var config = require('./../config.js'),
-    proxy = require('./../lib/HTTPClient.js'),
-    IDM = require('./../lib/idm.js').IDM,
-    AZF = require('./../lib/azf.js').AZF;
+    httpClient = require('./../lib/HTTPClient.js');
 
 var log = require('./../lib/logger').logger.getLogger("Root");
 
 var Root = (function() {
 
-    var pep = function(req, res) {
+    var handleproxy = function(req, res, options, body){
 
-        var body = req.body.toString('utf8');
+      // Adds x-forwarded-for header
+      options.headers = httpClient.getClientIp(req, req.headers);
+
+      // Add OC header
+      options.headers['x-organicity-foo'] = 'OC-FOO';
+
+      // Handle body
+      if(req.method === 'POST' && body) {
+        console.log('Body:', body);
+      }
+
+      httpClient.sendData(options, body, res);
+    }
+
+    var pep = function(req, res) {
 
         var options = {
             protocol: 'http',
@@ -17,20 +29,12 @@ var Root = (function() {
             port: config.app_port,
             path: req.url,
             method: req.method,
-            headers: proxy.getClientIp(req, req.headers)
+            headers: req.headers
         };
 
-        // Add header
-        options.headers['x-organicity-foo'] = 'OC-FOO';
+        var body = req.body.toString('utf8');
 
-        // Handle body
-        if(req.method === 'POST' && body) {
-          console.log('Body:', body);
-        }
-
-        proxy.sendData(options, body, res);
-        return;
-
+        handleproxy(req, res, options, body);
     };
 
     return {

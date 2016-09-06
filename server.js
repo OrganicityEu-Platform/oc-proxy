@@ -2,7 +2,6 @@ var config = require('./config'),
     fs = require('fs'),
     https = require('https'),
     Root = require('./controllers/root').Root,
-    IDM = require("./lib/idm.js").IDM,
     errorhandler = require('errorhandler');
 
 config.azf = config.azf || {};
@@ -69,17 +68,7 @@ if (config.tokens_engine === 'keystone' && config.azf.enabled === true) {
     return;
 }
 
-log.info('Starting PEP proxy in port ' + port + '.');
-
-/*
-IDM.authenticate (function (token) {
-
-    log.info('Success authenticating PEP proxy. Proxy Auth-token: ', token);
-
-}, function (status, e) {
-    log.error('Error in keystone communication', e);
-});
-*/
+log.info('Starting OC proxy on port ' + port + '.');
 
 if (config.https.enabled === true) {
     var options = {

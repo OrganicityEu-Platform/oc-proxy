@@ -3,12 +3,6 @@ var config = require('./../config.js'),
 
 var log = require('./../lib/logger').logger.getLogger("Root");
 
-if (!Number.isInteger) {
-  Number.isInteger = function isInteger (nVal) {
-    return typeof nVal === "number" && isFinite(nVal) && nVal > -9007199254740992 && nVal < 9007199254740992 && Math.floor(nVal) === nVal;
-  };
-}
-
 var Root = (function() {
 
 	var appid = 0;
@@ -16,10 +10,11 @@ var Root = (function() {
 	var sub = undefined;
 
 	var headerExists = function (headers, name, res) {
+    console.log('Check for header: ' + name);
 		if(!headers[name]) {
 			res.statusCode = 400;
 			res.send('HTTP header ' + name.toLowerCase() + ' not provided!');
-			return false; 
+			return false;
 		}
 		return true;
 	}
@@ -27,13 +22,13 @@ var Root = (function() {
 	var errorHandler = function(res) {
 		return function(status, resp) {
 		    log.error('HTTP error. Status: ', status, 'Response: ', resp);
-		    res.statusCode = status;
-		    res.send(resp);
+		    res.statusCode = 500;
+		    res.send('An internal server error happended!');
 		}
 	}
 
-    // Check HTTP headers
-    var call0 = function(req, res, options, body) {
+  // Check HTTP headers
+  var call0 = function(req, res, options, body) {
 
 		//#################################################################
 		// Check, if some headers do exist
@@ -56,31 +51,21 @@ var Root = (function() {
 		}
 
 		//#################################################################
-		// Check, if the headers are valid
+		// Get the data from the headers and check, if some of the headers are valid
 		//#################################################################
 
 		// This header is provides by the keycloak proxy
 		sub = options.headers['x-auth-subject'];
 
-		appid = parseInt(options.headers['x-organicity-application'], 10);
+    // These headers must be privided by the client
+		appid = options.headers['x-organicity-application'];
+		expid = options.headers['x-organicity-experiment'];
 
-		if(!Number.isInteger(appid)) {
-			res.statusCode = 400;
-			res.send('HTTP header x-organicity-application is not an integer!');
-			return; 
-		}
-
-		expid = parseInt(options.headers['x-organicity-experiment'], 10);
-		if(!Number.isInteger(appid)) {
-			res.statusCode = 400;
-			res.send('HTTP header x-organicity-experiment is not an integer!');
-			return; 
-		}
-
+    // The only valid content type is JSON
 		if(options.headers['content-type'] !== 'application/json') {
 			res.statusCode = 406;
 			res.send('Content type ' + options.headers['content-type'] + ' not acceptable. Please provide application/json');
-			return; 
+			return;
 		}
 
 		console.log('### Data extracted from the header ###');
@@ -89,8 +74,8 @@ var Root = (function() {
 		console.log('sub', sub);
 		console.log('######################################');
 
-		call1(req, res, options, body);
-    };
+    call1(req, res, options, body);
+  };
 
     // Is experiment allowed to feed data
     var call1 = function(req, res, options, body) {
@@ -125,46 +110,26 @@ var Root = (function() {
       };
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-		// This will be called, if the sub is the expermenter of the experiment 
-        call4(req, res, options, body);
+		// This will be called, if the sub is the expermenter of the experiment
+        call3(req, res, options, body);
       }, function() {
           // This will be called, if the sub is NOT the expermenter of the experiment
- 
+
           // Check whether a participant takes part in the experiment
           // GET /emscheck/participant-experiment/{parId}/{expId}
-		  var optionsCall = {
-		      protocol: 'http',
-		      host: '31.200.243.76',
-		      port: '8081',
-		      path: '/emscheck/participant-experiment/' + sub + '/' + expid,
-		      method: 'GET'
-		  };
+        var optionsCall = {
+            protocol: 'http',
+            host: '31.200.243.76',
+            port: '8081',
+            path: '/emscheck/participant-experiment/' + sub + '/' + expid,
+            method: 'GET'
+        };
 
-		  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-			// This will be called, if the sub is a participant of the experiment
-		    call4(req, res, options, body);
-		  }, errorHandler(res));
+        httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+        // This will be called, if the sub is a participant of the experiment
+          call3(req, res, options, body);
+        }, errorHandler(res));
       });
-
-
-
-
-
-/*
-      var optionsCall = {
-          protocol: 'https',
-          host: 'itm.uni-luebeck.de',
-          port: '443',
-          path: '/',
-          method: 'GET'
-      };
-
-      httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-        options.headers['X-organicity-call2'] = 'OKAY';
-        call3(req, res, options, body);
-      });
-*/
-      call3(req, res, options, body);
     };
 
     // Check whether an application belongs to one experiment
@@ -184,30 +149,34 @@ var Root = (function() {
 
     // Does the experiment have quota
     var call4 = function(req, res, options, body) {
-/*      var optionsCall = {
+      var optionsCall = {
           protocol: 'http',
-          host: 'pro.server.organicity.eu',
-          port: '80',
-          path: '/',
+          host: 'dev.server.organicity.eu',
+          port: '8080',
+          path: '/v1/experiments/' + expid,
           method: 'GET'
       };
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
         options.headers['X-organicity-call4'] = 'OKAY';
         call5(req, res, options, body);
-      });
-*/
-      call5(req, res, options, body);
+      }, errorHandler(res));
     };
 
     // Check the validity of the asset
     var call5 = function(req, res, options, body) {
 
       // Handle body
-      if(req.method === 'POST' && body) {
+      if(!body) {
+        res.statusCode = 400;
+        res.send('No body provided!');
+        return;
+      }
+
+      if(req.method === 'POST') {
         var b = JSON.parse(body);
         console.log('Body:', b);
-        if(b.username === 'xzy') {
+        if(b.username === 'xyz') {
           console.log('Everything is fine');
         } else {
           res.statusCode = 403;

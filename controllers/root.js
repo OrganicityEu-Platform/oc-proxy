@@ -56,7 +56,7 @@ var Root = (function() {
 		// Get the data from the headers and check, if some of the headers are valid
 		//#################################################################
 
-		// This header is provides by the keycloak proxy
+		// This header is provided by the keycloak proxy
 		sub = options.headers['x-auth-subject'];
 
     // These headers must be privided by the client

@@ -8,9 +8,10 @@ var Root = (function() {
 	var appid = 0;
 	var expid = 0;
 	var sub = undefined;
+	var access_token = undefined;
 
 	var headerExists = function (headers, name, res) {
-    console.log('Check for header: ' + name);
+    console.log('   Check for header: ' + name);
 		if(!headers[name]) {
 			res.statusCode = 400;
 			res.send('HTTP header ' + name.toLowerCase() + ' not provided!');
@@ -70,20 +71,46 @@ var Root = (function() {
 			return;
 		}
 
-		console.log('### Data extracted from the header ###');
-		console.log('appid:', appid);
-		console.log('expid', expid);
-		console.log('sub', sub);
-		console.log('######################################');
+		console.log('   ### Data extracted from the header ###');
+		console.log('   appid:', appid);
+		console.log('   expid', expid);
+		console.log('   sub', sub);
+		console.log('   ######################################');
 
     call1(req, res, options, body);
   };
 
-    // Is experiment allowed to feed data
+
     var call1 = function(req, res, options, body) {
 
-			console.log('1) Is experiment allowed to feed data?');
+			console.log('1) Get access token');
 
+      var optionsCall = {
+          protocol: 'https',
+          host: 'accounts.organicity.eu',
+          port: '443',
+          path: '/realms/organicity/protocol/openid-connect/token',
+          method: 'POST',
+					headers: {
+						'Content-Type' : 'application/x-www-form-urlencoded'
+					}
+      };
+
+			// TODO: Configure this
+			var body2 = 'grant_type=client_credentials&client_id=' + config.client_id + '&client_secret=' + config.client_secret;
+
+      httpClient.sendData(optionsCall, body2, res, function(status, responseText, headers) {
+				var token = JSON.parse(responseText);
+				access_token = token.access_token;
+        call1_1(req, res, options, body);
+      });
+		};
+
+    // Is experiment allowed to feed data
+    var call1_1 = function(req, res, options, body) {
+
+			console.log('2) Is experiment allowed to feed data?');
+			console.log('TODO');
 /*
       var optionsCall = {
           protocol: 'https',
@@ -104,7 +131,7 @@ var Root = (function() {
     // This checks, if the sub is a participant/experimenter of the experiment
     var call2 = function(req, res, options, body) {
 
-			console.log('2) Is sub a participant/experimenter of the experiment?');
+			console.log('3) Is sub a participant/experimenter of the experiment?');
 
       // Check whether an experimenter is the owner of one experiment
       // GET /emscheck/experimentowner/{experId}/{expId}
@@ -113,7 +140,10 @@ var Root = (function() {
           host: '31.200.243.76',
           port: '8081',
           path: '/emscheck/experimentowner/' + sub + '/' + expid,
-          method: 'GET'
+          method: 'GET',
+					headers : {
+						'authorization' : 'Bearer: ' + access_token
+					}
       };
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
@@ -129,7 +159,10 @@ var Root = (function() {
             host: '31.200.243.76',
             port: '8081',
             path: '/emscheck/participant-experiment/' + sub + '/' + expid,
-            method: 'GET'
+            method: 'GET',
+						headers : {
+							'authorization' : 'Bearer: ' + access_token
+						}
         };
 
         httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
@@ -142,14 +175,17 @@ var Root = (function() {
     // Check whether an application belongs to one experiment
     var call3 = function(req, res, options, body) {
 
-			console.log('3) Does an application belong to one experiment?');
+			console.log('4) Does an application belong to one experiment?');
 
       var optionsCall = {
           protocol: 'http',
           host: '31.200.243.76',
           port: '8081',
           path: '/emscheck/application-experiment/' + expid + '/' + appid,
-          method: 'GET'
+          method: 'GET',
+					headers : {
+						'authorization' : 'Bearer: ' + access_token
+					}
       };
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
@@ -160,7 +196,7 @@ var Root = (function() {
     // Does the experiment have quota
     var call4 = function(req, res, options, body) {
 
-			console.log('4) Does the experiment have quota?');
+			console.log('5) Does the experiment have quota?');
 			/*
       var optionsCall = {
           protocol: 'http',
@@ -181,7 +217,7 @@ var Root = (function() {
     // Check the validity of the asset
     var call5 = function(req, res, options, body) {
 
-			console.log('5) Check the validity of the asset');
+			console.log('6) Check the validity of the asset', body);
 
       if(!body) {
         res.statusCode = 400;
@@ -189,20 +225,19 @@ var Root = (function() {
         return;
       }
 
-
       // Handle body
       if(req.method === 'POST') {
-				var assets = JSON.parse(body);
 
-				if(assets._id != undefined){
+				var asset = JSON.parse(body);
 
-					var asset = assets._id;
+				if(asset.id != undefined){
 
 					var item_id = asset.id;
 					var item_type = asset.type;
 					var item_servicePath = asset.servicePath;
+
 					if(item_id != undefined){
-						alert(item_id);
+						console.log('id: ', item_id);
 					} else {
 						res.statusCode = 403;
 						res.send('item_id wrong');
@@ -210,33 +245,44 @@ var Root = (function() {
 					}
 
 					if(item_type != undefined) {
-						alert(item_type);
+						console.log('type: ', item_type);
 					} else {
 						res.statusCode = 403;
 						res.send('item_type wrong');
 						return;
 					}
 
+/*
 					if(item_servicePath != undefined){
-						alert(item_servicePath);
+						console.log('servicePath: ', item_servicePath);
 					} else {
 						res.statusCode = 403;
 						res.send('item_servicePath wrong');
 						return;
 					}
+*/
+					call6(req, res, options, body);
+
 				} else {
 					res.statusCode = 403;
 					res.send('assets_id wrong');
 					return;
 				}
 
-      	call6(req, res, options, body);
+			}
+
+
     };
 
     // Finally, Call the configured server
     var call6 = function(req, res, options, body){
 
-			console.log('6) Forward message to the configured server.');
+			console.log('7) Add FIWARE signature.');
+
+			options.headers['Fiware-Service'] = 'organicity';
+			options.headers['Fiware-ServicePath'] = '/';
+
+			console.log('8) Forward message to the configured server.');
 
       // Add x-forwarded-for header
       options.headers = httpClient.getClientIp(req, req.headers);

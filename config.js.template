@@ -28,10 +28,13 @@ config.password = '';
 // in seconds
 config.cache_time = 300;
 
-// if enabled PEP checks permissions with AuthZForce GE. 
+config.client_id = "USERNAME";
+config.client_secret = "PASSWORD";
+
+// if enabled PEP checks permissions with AuthZForce GE.
 // only compatible with oauth2 tokens engine
 //
-// you can use custom policy checks by including programatic scripts 
+// you can use custom policy checks by including programatic scripts
 // in policies folder. An script template is included there
 config.azf = {
 	enabled: false,

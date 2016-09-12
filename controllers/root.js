@@ -183,26 +183,54 @@ var Root = (function() {
 
 			console.log('5) Check the validity of the asset');
 
-      // Handle body
       if(!body) {
         res.statusCode = 400;
         res.send('No body provided!');
         return;
       }
 
-      if(req.method === 'POST') {
-        var b = JSON.parse(body);
-        console.log('Body:', b);
-        if(b.username === 'xyz') {
-          console.log('Everything is fine');
-        } else {
-          res.statusCode = 403;
-          res.send('Username wrong');
-          return;
-        }
-      }
 
-      call6(req, res, options, body);
+      // Handle body
+      if(req.method === 'POST') {
+				var assets = JSON.parse(body);
+
+				if(assets._id != undefined){
+
+					var asset = assets._id;
+
+					var item_id = asset.id;
+					var item_type = asset.type;
+					var item_servicePath = asset.servicePath;
+					if(item_id != undefined){
+						alert(item_id);
+					} else {
+						res.statusCode = 403;
+						res.send('item_id wrong');
+						return;
+					}
+
+					if(item_type != undefined) {
+						alert(item_type);
+					} else {
+						res.statusCode = 403;
+						res.send('item_type wrong');
+						return;
+					}
+
+					if(item_servicePath != undefined){
+						alert(item_servicePath);
+					} else {
+						res.statusCode = 403;
+						res.send('item_servicePath wrong');
+						return;
+					}
+				} else {
+					res.statusCode = 403;
+					res.send('assets_id wrong');
+					return;
+				}
+
+      	call6(req, res, options, body);
     };
 
     // Finally, Call the configured server

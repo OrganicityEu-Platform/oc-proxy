@@ -30,6 +30,8 @@ var Root = (function() {
   // Check HTTP headers
   var call0 = function(req, res, options, body) {
 
+		console.log('0) Check HTTP headers?');
+
 		//#################################################################
 		// Check, if some headers do exist
 		//#################################################################
@@ -79,6 +81,9 @@ var Root = (function() {
 
     // Is experiment allowed to feed data
     var call1 = function(req, res, options, body) {
+
+			console.log('1) Is experiment allowed to feed data?');
+
 /*
       var optionsCall = {
           protocol: 'https',
@@ -98,6 +103,8 @@ var Root = (function() {
 
     // This checks, if the sub is a participant/experimenter of the experiment
     var call2 = function(req, res, options, body) {
+
+			console.log('2) Is sub a participant/experimenter of the experiment?');
 
       // Check whether an experimenter is the owner of one experiment
       // GET /emscheck/experimentowner/{experId}/{expId}
@@ -134,6 +141,9 @@ var Root = (function() {
 
     // Check whether an application belongs to one experiment
     var call3 = function(req, res, options, body) {
+
+			console.log('3) Does an application belong to one experiment?');
+
       var optionsCall = {
           protocol: 'http',
           host: '31.200.243.76',
@@ -149,6 +159,9 @@ var Root = (function() {
 
     // Does the experiment have quota
     var call4 = function(req, res, options, body) {
+
+			console.log('4) Does the experiment have quota?');
+			/*
       var optionsCall = {
           protocol: 'http',
           host: 'dev.server.organicity.eu',
@@ -161,10 +174,14 @@ var Root = (function() {
         options.headers['X-organicity-call4'] = 'OKAY';
         call5(req, res, options, body);
       }, errorHandler(res));
+			*/
+			call5(req, res, options, body);
     };
 
     // Check the validity of the asset
     var call5 = function(req, res, options, body) {
+
+			console.log('5) Check the validity of the asset');
 
       // Handle body
       if(!body) {
@@ -190,6 +207,9 @@ var Root = (function() {
 
     // Finally, Call the configured server
     var call6 = function(req, res, options, body){
+
+			console.log('6) Forward message to the configured server.');
+
       // Add x-forwarded-for header
       options.headers = httpClient.getClientIp(req, req.headers);
       httpClient.sendData(options, body, res);

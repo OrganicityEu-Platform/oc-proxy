@@ -308,9 +308,8 @@ var Root = (function() {
 						httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
 
 							// (d) Check, if non allowed attributes are used
-							var bad_attribues = ['urn:oc:attributeType:reputation'];
-							for (var i = 0; i < bad_attribues.length; i++) {
-								var a = bad_attribues[i];
+							for (var i = 0; i < config.bad_asset_attributes.length; i++) {
+								var a = config.bad_asset_attributes[i];
 								if(asset[a]) {
 									res.statusCode = 400;
 									res.send('Attribute ' + bad_attribues[i] + ' not allowed!');

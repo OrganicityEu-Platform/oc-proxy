@@ -100,10 +100,10 @@ var Root = (function() {
 			console.log('1) Get access token');
 
       var optionsCall = {
-          protocol: 'https',
-          host: 'accounts.organicity.eu',
-          port: '443',
-          path: '/realms/organicity/protocol/openid-connect/token',
+          protocol: config.accounts_tokenendpoint.protocol,
+          host: config.accounts_tokenendpoint.host,
+          port: config.accounts_tokenendpoint.port,
+          path: config.accounts_tokenendpoint.path,
           method: 'POST',
 					headers: {
 						'Content-Type' : 'application/x-www-form-urlencoded'
@@ -125,13 +125,16 @@ var Root = (function() {
 
 			console.log('2) Is experiment allowed to feed data?');
 			console.log('   TODO');
+
+			// TODO: Call `Is experiment allowed to feed data`
+
 /*
       var optionsCall = {
-          protocol: 'https',
-          host: 'accounts.organicity.eu',
-          port: '443',
-          path: '/',
-          method: 'GET'
+          protocol: '',
+          host: '',
+          port: '',
+          path: '',
+          method: ''
       };
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
@@ -150,9 +153,9 @@ var Root = (function() {
       // Check whether an experimenter is the owner of one experiment
       // GET /emscheck/experimentowner/{experId}/{expId}
       var optionsCall = {
-          protocol: 'http',
-          host: '31.200.243.76',
-          port: '8081',
+          protocol: config.experiment_management_api.protocol,
+          host: config.experiment_management_api.host,
+          port: config.experiment_management_api.port,
           path: '/emscheck/experimentowner/' + sub + '/' + expid,
           method: 'GET',
 					headers : {
@@ -164,14 +167,14 @@ var Root = (function() {
 		// This will be called, if the sub is the expermenter of the experiment
         call3(req, res, options, body);
       }, function() {
-          // This will be called, if the sub is NOT the expermenter of the experiment
+				// This will be called, if the sub is NOT the expermenter of the experiment
 
-          // Check whether a participant takes part in the experiment
-          // GET /emscheck/participant-experiment/{parId}/{expId}
+				// Check whether a participant takes part in the experiment
+        // GET /emscheck/participant-experiment/{parId}/{expId}
         var optionsCall = {
-            protocol: 'http',
-            host: '31.200.243.76',
-            port: '8081',
+            protocol: config.experiment_management_api.protocol,
+            host: config.experiment_management_api.host,
+            port: config.experiment_management_api.port,
             path: '/emscheck/participant-experiment/' + sub + '/' + expid,
             method: 'GET',
 						headers : {
@@ -192,9 +195,9 @@ var Root = (function() {
 			console.log('4) Does an application belong to one experiment?');
 
       var optionsCall = {
-          protocol: 'http',
-          host: '31.200.243.76',
-          port: '8081',
+          protocol: config.experiment_management_api.protocol,
+          host: config.experiment_management_api.host,
+          port: config.experiment_management_api.port,
           path: '/emscheck/application-experiment/' + expid + '/' + appid,
           method: 'GET',
 					headers : {
@@ -212,16 +215,17 @@ var Root = (function() {
 
 			console.log('5) Does the experiment have quota?');
 			console.log('   TODO');
-			/*
 
 			// TODO
+			// Call the quota endpoint
 
+			/*
       var optionsCall = {
-          protocol: 'http',
-          host: 'dev.server.organicity.eu',
-          port: '8080',
-          path: '/v1/experiments/' + expid,
-          method: 'GET'
+          protocol: '',
+          host: '',
+          port: '',
+          path: '',
+          method: ''
       };
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
@@ -250,7 +254,7 @@ var Root = (function() {
 
 				if(asset.id != undefined){
 
-					// main-experimenter-id, experiment-id
+					// Example
 					// urn:oc:entity:experimenters:86d7edce-5092-44c0-bed8-da4beaa3fbc6:57d64f9cffd7cce42504bde3:4333
 					// [0][1] [2]    [3]           [4]                                  [5]                      [6]
 					//
@@ -291,11 +295,8 @@ var Root = (function() {
 								return;
 						}
 
-						//console.log(') is the experimenter.id in the asset the main experimente id?');
-
 						// TODO:
 						// get main-experimenter-id for experiment id from the `Experiment Management Service`
-						// Check, if the reuslt if equal to urn_main_experimenter_id provided in the URN
 
 						// (c) Check, if the
 						var optionsCall = {
@@ -306,6 +307,10 @@ var Root = (function() {
 								method: 'GET'
 						};
 						httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+
+              // TODO
+              // Check, if the reuslt is equal to urn_main_experimenter_id
+              // provided in the URN of the asset
 
 							// (d) Check, if non allowed attributes are used
 							for (var i = 0; i < config.bad_asset_attributes.length; i++) {
@@ -326,9 +331,9 @@ var Root = (function() {
 
 							// (f) Get the available assetTypes from the OrganiCity Platform Management API
 							var optionsCall = {
-									protocol: 'http',
-									host: 'dev.server.organicity.eu',
-									port: '8080',
+									protocol: config.platform_management_api.protocol,
+									host: config.platform_management_api.host,
+									port: config.platform_management_api.port,
 									path: '/v1/dictionary/assettypes',
 									method: 'GET',
 									headers : {

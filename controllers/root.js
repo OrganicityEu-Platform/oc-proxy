@@ -141,6 +141,7 @@ var Root = (function() {
         call2(req, res, options, body);
       });
 */
+
       call2(req, res, options, body);
     };
 
@@ -232,6 +233,7 @@ var Root = (function() {
         call5(req, res, options, body);
       }, errorHandler(res));
 			*/
+
 			call5(req, res, options, body);
     };
 
@@ -401,14 +403,15 @@ var Root = (function() {
       // Add x-forwarded-for header
       options.headers = httpClient.getClientIp(req, req.headers);
       httpClient.sendData(options, body, res);
+
     }
 
     var pep = function(req, res) {
 
       var options = {
           protocol: config.application_endpoint.protocol,
-          host: application_endpoint.host,
-          port: application_endpoint.port,
+          host: config.application_endpoint.host,
+          port: config.application_endpoint.port,
           path: req.url,
           method: req.method,
           headers: req.headers

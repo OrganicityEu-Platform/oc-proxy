@@ -11,9 +11,11 @@ var log = require('./lib/logger').logger.getLogger("Server");
 
 var express = require('express');
 
+/*
 process.on('uncaughtException', function (err) {
   log.error('Caught exception: ' + err);
 });
+*/
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 var app = express();

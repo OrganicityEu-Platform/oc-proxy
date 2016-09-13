@@ -55,6 +55,10 @@ var Root = (function() {
 			return;
 		}
 
+		if(!headerExists(options.headers, 'accept', res)) {
+			return;
+		}
+
 		//#################################################################
 		// Get the data from the headers and check, if some of the headers are valid
 		//#################################################################
@@ -66,10 +70,17 @@ var Root = (function() {
 		appid = options.headers['x-organicity-application'];
 		expid = options.headers['x-organicity-experiment'];
 
-    // The only valid content type is JSON
+    // The only valid content-type header is JSON
 		if(options.headers['content-type'] !== 'application/json') {
 			res.statusCode = 406;
 			res.send('Content type ' + options.headers['content-type'] + ' not acceptable. Please provide application/json');
+			return;
+		}
+
+    // The only valid accept header is JSON
+		if(options.headers['accept'] !== 'application/json') {
+			res.statusCode = 406;
+			res.send('Accept ' + options.headers['accept'] + ' not acceptable. Please provide application/json');
 			return;
 		}
 

@@ -110,7 +110,6 @@ var Root = (function() {
 					}
       };
 
-			// TODO: Configure this
 			var body2 = 'grant_type=client_credentials&client_id=' + config.client_id + '&client_secret=' + config.client_secret;
 
       httpClient.sendData(optionsCall, body2, res, function(status, responseText, headers) {
@@ -249,8 +248,14 @@ var Root = (function() {
 
       // Handle body
       if(req.method === 'POST') {
-
-				var asset = JSON.parse(body);
+        var asset;
+        try {
+          asset = JSON.parse(body);
+        } catch (e) {
+          res.statusCode = 400;
+          res.send('Body is not valid JSON!');
+          return;
+        }
 
 				if(asset.id != undefined){
 

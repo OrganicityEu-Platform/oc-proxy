@@ -1,6 +1,8 @@
 var config = require('./../config.js'),
     httpClient = require('./../lib/HTTPClient.js');
 
+require('string.prototype.startswith');
+
 var log = require('./../lib/logger').logger.getLogger("Root");
 
 var Root = (function() {
@@ -185,7 +187,7 @@ var Root = (function() {
           path: '/emscheck/application-experiment/' + expid + '/' + appid,
           method: 'GET',
 					headers : {
-						'authorization' : 'Bearer: ' + access_token
+						'authorization' : 'Bearer ' + access_token
 					}
       };
 
@@ -200,6 +202,9 @@ var Root = (function() {
 			console.log('5) Does the experiment have quota?');
 			console.log('   TODO');
 			/*
+
+			// TODO
+
       var optionsCall = {
           protocol: 'http',
           host: 'dev.server.organicity.eu',
@@ -234,45 +239,132 @@ var Root = (function() {
 
 				if(asset.id != undefined){
 
+					// main-experimenter-id, experiment-id
+					// urn:oc:entity:experimenters:86d7edce-5092-44c0-bed8-da4beaa3fbc6:57d64f9cffd7cce42504bde3:4333
+					// [0][1] [2]    [3]           [4]                                  [5]                      [6]
+					//
+					// [0]-[3] -handles by prefix check
+					//
+					// [4] - main experimenter id
+					// [5] - experiment id
+					// [6] - assetid
+
 					var item_id = asset.id;
 					var item_type = asset.type;
 					var item_servicePath = asset.servicePath;
 
+					// (a) Validate the asset id
 					if(item_id != undefined){
 						console.log('   id: ', item_id);
+
+						if(!item_id.startsWith('urn:oc:entity:experimenters')) {
+							res.statusCode = 400;
+							res.send('asset.id prefix wrong');
+							return;
+						}
+
+						var urn_parts = item_id.split(':');
+						var urn_main_experimenter_id = urn_parts[4];
+						var urn_experiment_id = urn_parts[5];
+						var urn_asset_id = urn_parts[6];
+
+						console.log('   Prefix:', 'urn:oc:entity:experimenters');
+						console.log('   urn_main_experimenter_id:', urn_main_experimenter_id);
+						console.log('   urn_experiment_id:', urn_experiment_id);
+						console.log('   urn_asset_id:', urn_asset_id);
+
+						// (b) Check for the correct experiment id
+						if(urn_experiment_id !== expid){
+								res.statusCode = 400;
+								res.send('The given experiment id `' + urn_experiment_id + '` within th asset id is wrong');
+								return;
+						}
+
+						//console.log(') is the experimenter.id in the asset the main experimente id?');
+
+						// TODO:
+						// get main-experimenter-id for experiment id from the `Experiment Management Service`
+						// Check, if the reuslt if equal to urn_main_experimenter_id provided in the URN
+
+						// (c) Check, if the
+						var optionsCall = {
+								protocol: 'http',
+								host: 'www.itm.uni-luebeck.de',
+								port: '80',
+								path: '/',
+								method: 'GET'
+						};
+						httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+
+							// (d) Check, if non allowed attributes are used
+							var bad_attribues = ['urn:oc:attributeType:reputation'];
+							for (var i = 0; i < bad_attribues.length; i++) {
+								var a = bad_attribues[i];
+								if(asset[a]) {
+									res.statusCode = 400;
+									res.send('Attribute ' + bad_attribues[i] + ' not allowed!');
+									return;
+								}
+							}
+
+							// (e) Check, if the prefix of the asset is correct
+							if(!item_type.startsWith('urn:oc:entitytype')) {
+								res.statusCode = 400;
+								res.send('asset.type prefix wrong');
+								return;
+							}
+
+							// (f) Get the available assetTypes from the OrganiCity Platform Management API
+							var optionsCall = {
+									protocol: 'http',
+									host: 'dev.server.organicity.eu',
+									port: '8080',
+									path: '/v1/dictionary/assettypes',
+									method: 'GET',
+									headers : {
+										'authorization' : 'Bearer ' + access_token
+									}
+							};
+
+							httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+								var assetTypes = JSON.parse(responseText);
+
+								var found = false;
+								for (var i = 0; i < assetTypes.length; i++) {
+									var a = assetTypes[i];
+									if(item_type === a.urn) {
+										found = true;
+									}
+								}
+
+								if(found) {
+									console.log('   Asset type found!');
+								} else {
+									console.log('   TODO: Asset type not found. Inform `OrganiCity Platform Management API`');
+									// TODO
+									// Inform OrganiCity Platform Management API about new assetType
+									//call6(req, res, options, body);
+								}
+
+								call6(req, res, options, body);
+
+							}, errorHandler(res));
+
+						}, errorHandler(res));
+
 					} else {
 						res.statusCode = 400;
-						res.send('item_id wrong');
+						res.send('asset.id wrong');
 						return;
 					}
-
-					if(item_type != undefined) {
-						console.log('   type: ', item_type);
-					} else {
-						res.statusCode = 400;
-						res.send('item_type wrong');
-						return;
-					}
-
-/*
-					if(item_servicePath != undefined){
-						console.log('servicePath: ', item_servicePath);
-					} else {
-						res.statusCode = 403;
-						res.send('item_servicePath wrong');
-						return;
-					}
-*/
-					call6(req, res, options, body);
 
 				} else {
 					res.statusCode = 403;
-					res.send('assets_id wrong');
+					res.send('asset.id not provided!');
 					return;
 				}
 
 			}
-
 
     };
 

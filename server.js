@@ -4,7 +4,6 @@ var config = require('./config'),
     Root = require('./controllers/root').Root,
     errorhandler = require('errorhandler');
 
-config.azf = config.azf || {};
 config.https = config.https || {};
 
 var log = require('./lib/logger').logger.getLogger("Server");
@@ -54,7 +53,7 @@ app.use(function (req, res, next) {
     }
 });
 
-var port = config.pep_port || 80;
+var port = config.port || 80;
 if (config.https.enabled) port = config.https.port || 443;
 app.set('port', port);
 
@@ -64,11 +63,6 @@ for (var p in config.public_paths) {
 }
 
 app.all('/*', Root.pep);
-
-if (config.tokens_engine === 'keystone' && config.azf.enabled === true) {
-    log.error('Keystone token engine is not compatible with AuthZForce. Please review configuration file.');
-    return;
-}
 
 log.info('Starting OC proxy on port ' + port + '.');
 

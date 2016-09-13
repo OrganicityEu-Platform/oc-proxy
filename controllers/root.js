@@ -100,10 +100,10 @@ var Root = (function() {
 			console.log('1) Get access token');
 
       var optionsCall = {
-          protocol: config.accounts_tokenendpoint.protocol,
-          host: config.accounts_tokenendpoint.host,
-          port: config.accounts_tokenendpoint.port,
-          path: config.accounts_tokenendpoint.path,
+          protocol: config.accounts_token_endpoint.protocol,
+          host: config.accounts_token_endpoint.host,
+          port: config.accounts_token_endpoint.port,
+          path: config.accounts_token_endpoint.path,
           method: 'POST',
 					headers: {
 						'Content-Type' : 'application/x-www-form-urlencoded'
@@ -406,16 +406,15 @@ var Root = (function() {
     var pep = function(req, res) {
 
       var options = {
-          protocol: 'http',
-          host: config.app_host,
-          port: config.app_port,
+          protocol: config.application_endpoint.protocol,
+          host: application_endpoint.host,
+          port: application_endpoint.port,
           path: req.url,
           method: req.method,
           headers: req.headers
       };
 
       var body = req.body.toString('utf8');
-
       call0(req, res, options, body);
     };
 

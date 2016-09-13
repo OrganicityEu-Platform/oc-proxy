@@ -71,11 +71,12 @@ var Root = (function() {
 			return;
 		}
 
-		console.log('   ### Data extracted from the header ###');
-		console.log('   appid:', appid);
-		console.log('   expid', expid);
-		console.log('   sub', sub);
-		console.log('   ######################################');
+		console.log('   ##### Data extracted from the header #####');
+		console.log('   appid:       ', appid);
+		console.log('   expid:       ', expid);
+		console.log('   sub:         ', sub);
+		console.log('   content-type:', options.headers['content-type']);
+		console.log('   ##########################################');
 
     call1(req, res, options, body);
   };
@@ -110,7 +111,7 @@ var Root = (function() {
     var call1_1 = function(req, res, options, body) {
 
 			console.log('2) Is experiment allowed to feed data?');
-			console.log('TODO');
+			console.log('   TODO');
 /*
       var optionsCall = {
           protocol: 'https',
@@ -197,6 +198,7 @@ var Root = (function() {
     var call4 = function(req, res, options, body) {
 
 			console.log('5) Does the experiment have quota?');
+			console.log('   TODO');
 			/*
       var optionsCall = {
           protocol: 'http',
@@ -217,7 +219,7 @@ var Root = (function() {
     // Check the validity of the asset
     var call5 = function(req, res, options, body) {
 
-			console.log('6) Check the validity of the asset', body);
+			console.log('6) Check the validity of the asset');
 
       if(!body) {
         res.statusCode = 400;
@@ -237,17 +239,17 @@ var Root = (function() {
 					var item_servicePath = asset.servicePath;
 
 					if(item_id != undefined){
-						console.log('id: ', item_id);
+						console.log('   id: ', item_id);
 					} else {
-						res.statusCode = 403;
+						res.statusCode = 400;
 						res.send('item_id wrong');
 						return;
 					}
 
 					if(item_type != undefined) {
-						console.log('type: ', item_type);
+						console.log('   type: ', item_type);
 					} else {
-						res.statusCode = 403;
+						res.statusCode = 400;
 						res.send('item_type wrong');
 						return;
 					}

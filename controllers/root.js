@@ -214,27 +214,30 @@ var Root = (function() {
     var call4 = function(req, res, options, body) {
 
 			console.log('5) Does the experiment have quota?');
-			console.log('   TODO');
 
-			// TODO
-			// Call the quota endpoint
-
-			/*
       var optionsCall = {
-          protocol: '',
-          host: '',
-          port: '',
-          path: '',
-          method: ''
+          protocol: config.experiment_management_api.protocol,
+          host: config.experiment_management_api.host,
+          port: config.experiment_management_api.port,
+          path: '/experiments/' + expid + '/remainingquota',
+          method: 'GET',
+					headers : {
+						'authorization' : 'Bearer ' + access_token
+					}
       };
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-        options.headers['X-organicity-call4'] = 'OKAY';
-        call5(req, res, options, body);
+        var responseJson = JSON.parse(responseText);
+        console.log('   Quota: ', responseJson.remainingQuota);
+        if(responseJson.remainingQuota > 0) {
+          call5(req, res, options, body);
+        } else {
+          res.statusCode = 400;
+          res.send('The experiment reached the quota!');
+          return;
+        }
       }, errorHandler(res));
-			*/
 
-			call5(req, res, options, body);
     };
 
     // Check the validity of the asset
@@ -242,14 +245,15 @@ var Root = (function() {
 
 			console.log('6) Check the validity of the asset');
 
-      if(!body) {
-        res.statusCode = 400;
-        res.send('No body provided!');
-        return;
-      }
-
       // Handle body
       if(req.method === 'POST') {
+
+        if(!body) {
+          res.statusCode = 400;
+          res.send('No body provided!');
+          return;
+        }
+
         var asset;
         try {
           asset = JSON.parse(body);
@@ -386,7 +390,11 @@ var Root = (function() {
 					return;
 				}
 
-			}
+			} else {
+
+        // GET, DELETE, ...
+        call6(req, res, options, body);
+      }
 
     };
 
@@ -402,7 +410,45 @@ var Root = (function() {
 
       // Add x-forwarded-for header
       options.headers = httpClient.getClientIp(req, req.headers);
-      httpClient.sendData(options, body, res);
+
+      httpClient.sendData(options, body, res,
+      function(status, responseText, headers) {
+        if(options.method === 'POST') {
+          console.log('9) Decrease the Quota');
+
+          var optionsCall = {
+              protocol: config.experiment_management_api.protocol,
+              host: config.experiment_management_api.host,
+              port: config.experiment_management_api.port,
+              path: '/experiments/' + expid + '/decreaseremquota',
+              method: 'POST',
+              headers : {
+                'authorization' : 'Bearer ' + access_token
+              }
+          };
+
+          var callBackOK = function() {
+              // Return the inital status code from the asset creation
+              res.statusCode = status;
+              for (var idx in headers) {
+                  var header = headers[idx];
+                  res.setHeader(idx, headers[idx]);
+              }
+              log.debug("Response: ", status);
+              log.debug(" Body: ", responseText);
+              res.send(responseText);
+          };
+
+          httpClient.sendData(optionsCall, undefined, res, callBackOK, errorHandler(res));
+        //} else if (options.method === 'DELETE') {
+        //
+        //console.log('9) Increase the Quota');
+        } else {
+          res.statusCode = status;
+          res.send(responseText);
+        }
+
+      });
 
     }
 

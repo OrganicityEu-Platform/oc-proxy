@@ -338,8 +338,10 @@ var Root = (function() {
 								}
 							}
 
+              var allowedPrefix = 'urn:oc:entitytype:';
+
 							// (e) Check, if the prefix of the asset is correct
-							if(!item_type.startsWith('urn:oc:entitytype')) {
+							if(!item_type.startsWith(allowedPrefix)) {
 								res.statusCode = 400;
 								res.send('asset.type prefix wrong');
 								return;
@@ -364,20 +366,47 @@ var Root = (function() {
 								for (var i = 0; i < assetTypes.length; i++) {
 									var a = assetTypes[i];
 									if(item_type === a.urn) {
+                    console.log('   ', a.urn);
 										found = true;
 									}
 								}
 
 								if(found) {
 									console.log('   Asset type found!');
+                  call6(req, res, options, body);
 								} else {
-									console.log('   TODO: Asset type not found. Inform `OrganiCity Platform Management API`');
-									// TODO
-									// Inform OrganiCity Platform Management API about new assetType
-									//call6(req, res, options, body);
-								}
 
-								call6(req, res, options, body);
+                  // If the assed cannot be found, we inform the `OrganiCity Platform Management API` about it
+
+                  // Remove the prefix before posting
+                  var assetName = item_type.substring(allowedPrefix.length);
+
+									console.log('   Asset unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
+
+                  call6(req, res, options, body);
+                  return;
+
+                  var optionsCall = {
+                      protocol: config.platform_management_api.protocol,
+                      host: config.platform_management_api.host,
+                      port: config.platform_management_api.port,
+                      path: '/v1/dictionary/unregisteredassettype',
+                      method: 'POST',
+                      headers : {
+                        'authorization' : 'Bearer ' + access_token,
+                        'content-type' : 'application/json'
+                      }
+                  };
+
+                  var newAsset = {
+                    name: assetName
+                  };
+
+                  httpClient.sendData(optionsCall, JSON.stringify(newAsset), res, function(status, responseText, headers) {
+                    // Push unregisteredassettype was successful
+                    call6(req, res, options, body);
+                  });
+								}
 
 							}, errorHandler(res));
 

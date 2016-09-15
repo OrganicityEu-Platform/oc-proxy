@@ -264,7 +264,7 @@ var Root = (function() {
 					// urn:oc:entity:experimenters:86d7edce-5092-44c0-bed8-da4beaa3fbc6:57d64f9cffd7cce42504bde3:4333
 					// [0][1] [2]    [3]           [4]                                  [5]                      [6]
 					//
-					// [0]-[3] -handles by prefix check
+					// [0]-[3] - handled by the prefix check
 					//
 					// [4] - main experimenter id
 					// [5] - experiment id
@@ -437,10 +437,21 @@ var Root = (function() {
       // Add x-forwarded-for header
       options.headers = httpClient.getClientIp(req, req.headers);
 
-      console.log(options);
-
       httpClient.sendData(options, body, res,
       function(status, responseText, headers) {
+
+        var callBackOK = function() {
+            // Return the inital status code from the asset creation
+            res.statusCode = status;
+            for (var idx in headers) {
+                var header = headers[idx];
+                res.setHeader(idx, headers[idx]);
+            }
+            log.debug("Response: ", status);
+            log.debug(" Body: ", responseText);
+            res.send(responseText);
+        };
+
         if(options.method === 'POST') {
           console.log('9) Decrease the Quota');
 
@@ -455,22 +466,22 @@ var Root = (function() {
               }
           };
 
-          var callBackOK = function() {
-              // Return the inital status code from the asset creation
-              res.statusCode = status;
-              for (var idx in headers) {
-                  var header = headers[idx];
-                  res.setHeader(idx, headers[idx]);
+          httpClient.sendData(optionsCall, undefined, res, callBackOK, errorHandler(res));
+        } else if(options.method === 'DELETE') {
+          console.log('9) Increase the Quota');
+
+          var optionsCall = {
+              protocol: config.experiment_management_api.protocol,
+              host: config.experiment_management_api.host,
+              port: config.experiment_management_api.port,
+              path: '/experiments/' + expid + '/increaseremquota',
+              method: 'POST',
+              headers : {
+                'authorization' : 'Bearer ' + access_token
               }
-              log.debug("Response: ", status);
-              log.debug(" Body: ", responseText);
-              res.send(responseText);
           };
 
           httpClient.sendData(optionsCall, undefined, res, callBackOK, errorHandler(res));
-        //} else if (options.method === 'DELETE') {
-        //
-        //console.log('9) Increase the Quota');
         } else {
           res.statusCode = status;
           res.send(responseText);

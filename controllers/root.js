@@ -39,50 +39,45 @@ var Root = (function() {
 		// Check, if some headers do exist
 		//#################################################################
 
+    // This header must be privided by the client
 		if(!headerExists(options.headers, 'x-organicity-application', res)) {
 			return;
 		}
+    appid = options.headers['x-organicity-application'];
 
+    // This header must be privided by the client
 		if(!headerExists(options.headers, 'x-organicity-experiment', res)) {
 			return;
 		}
+    expid = options.headers['x-organicity-experiment'];
 
+		// This header is provided by the keycloak proxy
 		if(!headerExists(options.headers, 'x-auth-subject', res)) {
 			return;
 		}
+		sub = options.headers['x-auth-subject'];
 
-		if(!headerExists(options.headers, 'content-type', res)) {
-			return;
-		}
-
+    // The only valid accept header is JSON
 		if(!headerExists(options.headers, 'accept', res)) {
 			return;
 		}
-
-		//#################################################################
-		// Get the data from the headers and check, if some of the headers are valid
-		//#################################################################
-
-		// This header is provided by the keycloak proxy
-		sub = options.headers['x-auth-subject'];
-
-    // These headers must be privided by the client
-		appid = options.headers['x-organicity-application'];
-		expid = options.headers['x-organicity-experiment'];
-
-    // The only valid content-type header is JSON
-		if(options.headers['content-type'] !== 'application/json') {
-			res.statusCode = 406;
-			res.send('Content type ' + options.headers['content-type'] + ' not acceptable. Please provide application/json');
-			return;
-		}
-
-    // The only valid accept header is JSON
 		if(options.headers['accept'] !== 'application/json') {
 			res.statusCode = 406;
 			res.send('Accept ' + options.headers['accept'] + ' not acceptable. Please provide application/json');
 			return;
 		}
+
+    if(options.method === 'POST') {
+      // The only valid content-type header is JSON
+      if(!headerExists(options.headers, 'content-type', res)) {
+        return;
+      }
+      if(options.headers['content-type'] !== 'application/json') {
+        res.statusCode = 406;
+        res.send('Content type ' + options.headers['content-type'] + ' not acceptable. Please provide application/json');
+        return;
+      }
+    }
 
 		console.log('   ##### Data extracted from the header #####');
 		console.log('   appid:       ', appid);
@@ -383,9 +378,6 @@ var Root = (function() {
 
 									console.log('   Asset unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
 
-                  call6(req, res, options, body);
-                  return;
-
                   var optionsCall = {
                       protocol: config.platform_management_api.protocol,
                       host: config.platform_management_api.host,
@@ -444,6 +436,8 @@ var Root = (function() {
 
       // Add x-forwarded-for header
       options.headers = httpClient.getClientIp(req, req.headers);
+
+      console.log(options);
 
       httpClient.sendData(options, body, res,
       function(status, responseText, headers) {

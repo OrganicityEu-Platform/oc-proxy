@@ -306,22 +306,27 @@ var Root = (function() {
 								return;
 						}
 
-						// TODO:
-						// get main-experimenter-id for experiment id from the `Experiment Management Service`
-
-						// (c) Check, if the
+						// (c) Check, if the main experimenter id within the URN of the asset equals the main experimenter id
 						var optionsCall = {
-								protocol: 'http',
-								host: 'www.itm.uni-luebeck.de',
-								port: '80',
-								path: '/',
-								method: 'GET'
+              protocol: config.experiment_management_api.protocol,
+              host: config.experiment_management_api.host,
+              port: config.experiment_management_api.port,
+              path: '/experiments/' + expid + '/mainexperimenter',
+              method: 'GET',
+              headers : {
+                'authorization' : 'Bearer ' + access_token
+              }
 						};
 						httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
 
-              // TODO
-              // Check, if the reuslt is equal to urn_main_experimenter_id
-              // provided in the URN of the asset
+              var responseJson = JSON.parse(responseText);
+              var mainExperimenter = responseJson.mainExperimenter;
+
+              if(urn_main_experimenter_id !== mainExperimenter) {
+                res.statusCode = 400;
+								res.send('The given experimenter id `' + urn_main_experimenter_id + '` within th asset id is wrong');
+                return;
+              }
 
 							// (d) Check, if non allowed attributes are used
 							for (var i = 0; i < config.bad_asset_attributes.length; i++) {

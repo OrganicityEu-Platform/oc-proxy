@@ -12,14 +12,28 @@ var Root = (function() {
 	var sub = undefined;
 	var access_token = undefined;
 
-	var headerExists = function (headers, name, res) {
-    console.log('   Check for header: ' + name);
-		if(!headers[name]) {
-			res.statusCode = 400;
-			res.send('HTTP header ' + name.toLowerCase() + ' not provided!');
-			return false;
-		}
-		return true;
+	var headerExists = function (headers, name, res, allowed) {
+    console.log('   Check for header: ', name, ' . ', allowed);
+
+    // Header is mandatory
+    if(allowed) {
+		  if(!headers[name]) {
+        res.statusCode = 400;
+        res.send('HTTP header ' + name.toLowerCase() + ' not provided!');
+        return false;
+      }
+      return true;
+    }
+
+    // Header is not allowed
+    else {
+		  if(headers[name]) {
+        res.statusCode = 400;
+        res.send('HTTP header ' + name.toLowerCase() + ' is not allowed!');
+        return false;
+      }
+      return true;
+    }
 	}
 
 	var errorHandler = function(res) {
@@ -34,42 +48,57 @@ var Root = (function() {
   var call0 = function(req, res, options, body) {
 
 		console.log('0) Check HTTP headers?');
+    //console.log(options.headers);
+
+		//#################################################################
+		// Check, if some invalid headers do exist
+		//#################################################################
+
+    // This header must be privided by the client
+		if(!headerExists(options.headers, 'fiware-service', res, false)) {
+			return;
+		}
+
+		if(!headerExists(options.headers, 'fiware-servicepath', res, false)) {
+			return;
+		}
 
 		//#################################################################
 		// Check, if some headers do exist
 		//#################################################################
 
     // This header must be privided by the client
-		if(!headerExists(options.headers, 'x-organicity-application', res)) {
+		if(!headerExists(options.headers, 'x-organicity-application', res, true)) {
 			return;
 		}
     appid = options.headers['x-organicity-application'];
 
     // This header must be privided by the client
-		if(!headerExists(options.headers, 'x-organicity-experiment', res)) {
+		if(!headerExists(options.headers, 'x-organicity-experiment', res, true)) {
 			return;
 		}
     expid = options.headers['x-organicity-experiment'];
 
 		// This header is provided by the keycloak proxy
-		if(!headerExists(options.headers, 'x-auth-subject', res)) {
+		if(!headerExists(options.headers, 'x-auth-subject', res, true)) {
 			return;
 		}
 		sub = options.headers['x-auth-subject'];
 
     // The only valid accept header is JSON
-		if(!headerExists(options.headers, 'accept', res)) {
+		if(!headerExists(options.headers, 'accept', res, true)) {
 			return;
 		}
+
 		if(options.headers['accept'] !== 'application/json') {
 			res.statusCode = 406;
 			res.send('Accept ' + options.headers['accept'] + ' not acceptable. Please provide application/json');
 			return;
 		}
 
-    if(options.method === 'POST') {
+    if(options.method === 'POST' || options.method === 'PUT') {
       // The only valid content-type header is JSON
-      if(!headerExists(options.headers, 'content-type', res)) {
+      if(!headerExists(options.headers, 'content-type', res, true)) {
         return;
       }
       if(options.headers['content-type'] !== 'application/json') {
@@ -203,10 +232,38 @@ var Root = (function() {
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
         call4(req, res, options, body);
       }, errorHandler(res));
+
     };
 
-    // Does the experiment have quota
     var call4 = function(req, res, options, body) {
+			console.log('4) is the experiment running?');
+
+      var optionsCall = {
+          protocol: config.experiment_management_api.protocol,
+          host: config.experiment_management_api.host,
+          port: config.experiment_management_api.port,
+          path: '/emscheck/experimentrunning/' + expid,
+          method: 'GET',
+					headers : {
+						'authorization' : 'Bearer ' + access_token
+					}
+      };
+
+      var errorHandlerExperimentRunning = function(res) {
+        return function(status, resp) {
+            log.error('HTTP error. Status: ', status, 'Response: ', resp);
+            res.statusCode = 400;
+            res.send('The experiment is not running!');
+        }
+      }
+
+      httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+        call4_1(req, res, options, body);
+      }, errorHandlerExperimentRunning(res));
+    }
+
+    // Does the experiment have quota
+    var call4_1 = function(req, res, options, body) {
 
 			console.log('5) Does the experiment have quota?');
 
@@ -241,7 +298,7 @@ var Root = (function() {
 			console.log('6) Check the validity of the asset');
 
       // Handle body
-      if(req.method === 'POST') {
+      if(req.method === 'POST' || req.method === 'PUT') {
 
         if(!body) {
           res.statusCode = 400;

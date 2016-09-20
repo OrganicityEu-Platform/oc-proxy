@@ -1,6 +1,6 @@
 var config = require('./../config.js'),
-    httpClient = require('./../lib/HTTPClient.js');
-
+    httpClient = require('./../lib/HTTPClient.js'),
+    url = require('url');
 require('string.prototype.startswith');
 
 var log = require('./../lib/logger').logger.getLogger("Root");
@@ -115,11 +115,11 @@ var Root = (function() {
 		console.log('   content-type:', options.headers['content-type']);
 		console.log('   ##########################################');
 
-    call1(req, res, options, body);
+    getAccessToken(req, res, options, body);
   };
 
 
-    var call1 = function(req, res, options, body) {
+    var getAccessToken = function(req, res, options, body) {
 
 			console.log('1) Get access token');
 
@@ -139,12 +139,12 @@ var Root = (function() {
       httpClient.sendData(optionsCall, body2, res, function(status, responseText, headers) {
 				var token = JSON.parse(responseText);
 				access_token = token.access_token;
-        call1_1(req, res, options, body);
+        isExperiementAllowedToFeedData(req, res, options, body);
       });
 		};
 
     // Is experiment allowed to feed data
-    var call1_1 = function(req, res, options, body) {
+    var isExperiementAllowedToFeedData = function(req, res, options, body) {
 
 			console.log('2) Is experiment allowed to feed data?');
 			console.log('   TODO');
@@ -162,15 +162,15 @@ var Root = (function() {
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
         options.headers['X-organicity-call1'] = 'OKAY';
-        call2(req, res, options, body);
+        isSubParticipantExperimenterOfExperiment(req, res, options, body);
       });
 */
 
-      call2(req, res, options, body);
+      isSubParticipantExperimenterOfExperiment(req, res, options, body);
     };
 
     // This checks, if the sub is a participant/experimenter of the experiment
-    var call2 = function(req, res, options, body) {
+    var isSubParticipantExperimenterOfExperiment = function(req, res, options, body) {
 
 			console.log('3) Is sub a participant/experimenter of the experiment?');
 
@@ -189,7 +189,7 @@ var Root = (function() {
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
 		// This will be called, if the sub is the expermenter of the experiment
-        call3(req, res, options, body);
+        doesApplicationbelongToAnExperiment(req, res, options, body);
       }, function() {
 				// This will be called, if the sub is NOT the expermenter of the experiment
 
@@ -208,13 +208,13 @@ var Root = (function() {
 
         httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
         // This will be called, if the sub is a participant of the experiment
-          call3(req, res, options, body);
+          doesApplicationbelongToAnExperiment(req, res, options, body);
         }, errorHandler(res));
       });
     };
 
     // Check whether an application belongs to one experiment
-    var call3 = function(req, res, options, body) {
+    var doesApplicationbelongToAnExperiment = function(req, res, options, body) {
 
 			console.log('4) Does an application belong to one experiment?');
 
@@ -230,259 +230,294 @@ var Root = (function() {
       };
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-        call4(req, res, options, body);
+        isExperimentRunning(req, res, options, body);
       }, errorHandler(res));
 
     };
 
-    var call4 = function(req, res, options, body) {
+    var isExperimentRunning = function(req, res, options, body) {
 			console.log('4) is the experiment running?');
 
       var optionsCall = {
-          protocol: config.experiment_management_api.protocol,
-          host: config.experiment_management_api.host,
-          port: config.experiment_management_api.port,
-          path: '/emscheck/experimentrunning/' + expid,
-          method: 'GET',
-					headers : {
-						'authorization' : 'Bearer ' + access_token
-					}
+        protocol: config.experiment_management_api.protocol,
+        host: config.experiment_management_api.host,
+        port: config.experiment_management_api.port,
+        path: '/emscheck/experimentrunning/' + expid,
+        method: 'GET',
+        headers : {
+          'authorization' : 'Bearer ' + access_token
+        }
       };
 
       var errorHandlerExperimentRunning = function(res) {
         return function(status, resp) {
-            log.error('HTTP error. Status: ', status, 'Response: ', resp);
-            res.statusCode = 400;
-            res.send('The experiment is not running!');
+          log.error('HTTP error. Status: ', status, 'Response: ', resp);
+          res.statusCode = 400;
+          res.send('The experiment is not running!');
         }
       }
 
       httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-        call4_1(req, res, options, body);
+        console.log('It runs!');
+        doesExperimentHaveQuota(req, res, options, body);
       }, errorHandlerExperimentRunning(res));
     }
 
     // Does the experiment have quota
-    var call4_1 = function(req, res, options, body) {
+    var doesExperimentHaveQuota = function(req, res, options, body) {
 
-			console.log('5) Does the experiment have quota?');
+      if(options.method === 'POST') {
+        console.log('5) Does the experiment have quota?');
 
-      var optionsCall = {
-          protocol: config.experiment_management_api.protocol,
-          host: config.experiment_management_api.host,
-          port: config.experiment_management_api.port,
-          path: '/experiments/' + expid + '/remainingquota',
-          method: 'GET',
-					headers : {
-						'authorization' : 'Bearer ' + access_token
-					}
-      };
+        var optionsCall = {
+            protocol: config.experiment_management_api.protocol,
+            host: config.experiment_management_api.host,
+            port: config.experiment_management_api.port,
+            path: '/experiments/' + expid + '/remainingquota',
+            method: 'GET',
+            headers : {
+              'authorization' : 'Bearer ' + access_token
+            }
+        };
 
-      httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-        var responseJson = JSON.parse(responseText);
-        console.log('   Quota: ', responseJson.remainingQuota);
-        if(responseJson.remainingQuota > 0) {
-          call5(req, res, options, body);
-        } else {
+        httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+          var responseJson = JSON.parse(responseText);
+          console.log('   Quota: ', responseJson.remainingQuota);
+          if(responseJson.remainingQuota > 0) {
+            checkValidityOfAsset(req, res, options, body);
+          } else {
+            res.statusCode = 400;
+            res.send('The experiment reached the quota!');
+            return;
+          }
+        }, errorHandler(res));
+      } else {
+        checkValidityOfAsset(req, res, options, body);
+      }
+    };
+
+    var validateBody = function(req, res, options, body) {
+
+      console.log('6b) Check the validity of the body');
+
+      if(!body) {
+        res.statusCode = 400;
+        res.send('No body provided!');
+        return;
+      }
+
+      var asset;
+      try {
+        asset = JSON.parse(body);
+      } catch (e) {
+        res.statusCode = 400;
+        res.send('Body is not valid JSON!');
+        return;
+      }
+
+      if(asset.id === undefined){
+        res.statusCode = 403;
+        res.send('asset.id not provided!');
+        return;
+      }
+
+      validateAssetId(asset.id, res, function() {
+        var item_type = asset.type;
+
+        // (d) Check, if non allowed attributes are used
+        for (var i = 0; i < config.bad_asset_attributes.length; i++) {
+          var a = config.bad_asset_attributes[i];
+          if(asset[a]) {
+            res.statusCode = 400;
+            res.send('Attribute ' + bad_attribues[i] + ' not allowed!');
+            return;
+          }
+        }
+
+        var allowedPrefix = 'urn:oc:entitytype:';
+
+        // (e) Check, if the prefix of the asset is correct
+        if(!item_type.startsWith(allowedPrefix)) {
           res.statusCode = 400;
-          res.send('The experiment reached the quota!');
+          res.send('asset.type prefix wrong');
           return;
         }
-      }, errorHandler(res));
+
+        // (f) Get the available assetTypes from the OrganiCity Platform Management API
+        var optionsCall = {
+            protocol: config.platform_management_api.protocol,
+            host: config.platform_management_api.host,
+            port: config.platform_management_api.port,
+            path: '/v1/dictionary/assettypes',
+            method: 'GET',
+            headers : {
+              'authorization' : 'Bearer ' + access_token
+            }
+        };
+
+        httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+          var assetTypes = JSON.parse(responseText);
+
+          var found = false;
+          for (var i = 0; i < assetTypes.length; i++) {
+            var a = assetTypes[i];
+            if(item_type === a.urn) {
+              console.log('   ', a.urn);
+              found = true;
+            }
+          }
+
+          if(found) {
+            console.log('   Asset type found!');
+            callFinalServer(req, res, options, body);
+          } else {
+
+            // If the assed cannot be found, we inform the `OrganiCity Platform Management API` about it
+
+            // Remove the prefix before posting
+            var assetName = item_type.substring(allowedPrefix.length);
+
+            console.log('   Asset unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
+
+            var optionsCall = {
+                protocol: config.platform_management_api.protocol,
+                host: config.platform_management_api.host,
+                port: config.platform_management_api.port,
+                path: '/v1/dictionary/unregisteredassettype',
+                method: 'POST',
+                headers : {
+                  'authorization' : 'Bearer ' + access_token,
+                  'content-type' : 'application/json'
+                }
+            };
+
+            var newAsset = {
+              name: assetName
+            };
+
+            httpClient.sendData(optionsCall, JSON.stringify(newAsset), res, function(status, responseText, headers) {
+              // Push unregisteredassettype was successful
+              callFinalServer(req, res, options, body);
+            });
+          }
+        }, errorHandler(res));
+      }); // validateAssetId
 
     };
 
-    // Check the validity of the asset
-    var call5 = function(req, res, options, body) {
+    var validateAssetId = function(item_id, res, callback) {
+      // Example
+      // urn:oc:entity:experimenters:86d7edce-5092-44c0-bed8-da4beaa3fbc6:57d64f9cffd7cce42504bde3:4333
+      // [0][1] [2]    [3]           [4]                                  [5]                      [6]
+      //
+      // [0]-[3] - handled by the prefix check
+      //
+      // [4] - main experimenter id
+      // [5] - experiment id
+      // [6] - assetid
 
-			console.log('6) Check the validity of the asset');
+      console.log('6) Check the validity of the assetId');
 
-      // Handle body
-      if(req.method === 'POST' || req.method === 'PUT') {
+      console.log('   id: ', item_id);
 
-        if(!body) {
-          res.statusCode = 400;
-          res.send('No body provided!');
-          return;
-        }
-
-        var asset;
-        try {
-          asset = JSON.parse(body);
-        } catch (e) {
-          res.statusCode = 400;
-          res.send('Body is not valid JSON!');
-          return;
-        }
-
-				if(asset.id != undefined){
-
-					// Example
-					// urn:oc:entity:experimenters:86d7edce-5092-44c0-bed8-da4beaa3fbc6:57d64f9cffd7cce42504bde3:4333
-					// [0][1] [2]    [3]           [4]                                  [5]                      [6]
-					//
-					// [0]-[3] - handled by the prefix check
-					//
-					// [4] - main experimenter id
-					// [5] - experiment id
-					// [6] - assetid
-
-					var item_id = asset.id;
-					var item_type = asset.type;
-					var item_servicePath = asset.servicePath;
-
-					// (a) Validate the asset id
-					if(item_id != undefined){
-						console.log('   id: ', item_id);
-
-						if(!item_id.startsWith('urn:oc:entity:experimenters')) {
-							res.statusCode = 400;
-							res.send('asset.id prefix wrong');
-							return;
-						}
-
-						var urn_parts = item_id.split(':');
-						var urn_main_experimenter_id = urn_parts[4];
-						var urn_experiment_id = urn_parts[5];
-						var urn_asset_id = urn_parts[6];
-
-						console.log('   Prefix:', 'urn:oc:entity:experimenters');
-						console.log('   urn_main_experimenter_id:', urn_main_experimenter_id);
-						console.log('   urn_experiment_id:', urn_experiment_id);
-						console.log('   urn_asset_id:', urn_asset_id);
-
-						// (b) Check for the correct experiment id
-						if(urn_experiment_id !== expid){
-								res.statusCode = 400;
-								res.send('The given experiment id `' + urn_experiment_id + '` within th asset id is wrong');
-								return;
-						}
-
-						// (c) Check, if the main experimenter id within the URN of the asset equals the main experimenter id
-						var optionsCall = {
-              protocol: config.experiment_management_api.protocol,
-              host: config.experiment_management_api.host,
-              port: config.experiment_management_api.port,
-              path: '/experiments/' + expid + '/mainexperimenter',
-              method: 'GET',
-              headers : {
-                'authorization' : 'Bearer ' + access_token
-              }
-						};
-						httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-
-              var responseJson = JSON.parse(responseText);
-              var mainExperimenter = responseJson.mainExperimenter;
-
-              if(urn_main_experimenter_id !== mainExperimenter) {
-                res.statusCode = 400;
-								res.send('The given experimenter id `' + urn_main_experimenter_id + '` within th asset id is wrong');
-                return;
-              }
-
-							// (d) Check, if non allowed attributes are used
-							for (var i = 0; i < config.bad_asset_attributes.length; i++) {
-								var a = config.bad_asset_attributes[i];
-								if(asset[a]) {
-									res.statusCode = 400;
-									res.send('Attribute ' + bad_attribues[i] + ' not allowed!');
-									return;
-								}
-							}
-
-              var allowedPrefix = 'urn:oc:entitytype:';
-
-							// (e) Check, if the prefix of the asset is correct
-							if(!item_type.startsWith(allowedPrefix)) {
-								res.statusCode = 400;
-								res.send('asset.type prefix wrong');
-								return;
-							}
-
-							// (f) Get the available assetTypes from the OrganiCity Platform Management API
-							var optionsCall = {
-									protocol: config.platform_management_api.protocol,
-									host: config.platform_management_api.host,
-									port: config.platform_management_api.port,
-									path: '/v1/dictionary/assettypes',
-									method: 'GET',
-									headers : {
-										'authorization' : 'Bearer ' + access_token
-									}
-							};
-
-							httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-								var assetTypes = JSON.parse(responseText);
-
-								var found = false;
-								for (var i = 0; i < assetTypes.length; i++) {
-									var a = assetTypes[i];
-									if(item_type === a.urn) {
-                    console.log('   ', a.urn);
-										found = true;
-									}
-								}
-
-								if(found) {
-									console.log('   Asset type found!');
-                  call6(req, res, options, body);
-								} else {
-
-                  // If the assed cannot be found, we inform the `OrganiCity Platform Management API` about it
-
-                  // Remove the prefix before posting
-                  var assetName = item_type.substring(allowedPrefix.length);
-
-									console.log('   Asset unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
-
-                  var optionsCall = {
-                      protocol: config.platform_management_api.protocol,
-                      host: config.platform_management_api.host,
-                      port: config.platform_management_api.port,
-                      path: '/v1/dictionary/unregisteredassettype',
-                      method: 'POST',
-                      headers : {
-                        'authorization' : 'Bearer ' + access_token,
-                        'content-type' : 'application/json'
-                      }
-                  };
-
-                  var newAsset = {
-                    name: assetName
-                  };
-
-                  httpClient.sendData(optionsCall, JSON.stringify(newAsset), res, function(status, responseText, headers) {
-                    // Push unregisteredassettype was successful
-                    call6(req, res, options, body);
-                  });
-								}
-
-							}, errorHandler(res));
-
-						}, errorHandler(res));
-
-					} else {
-						res.statusCode = 400;
-						res.send('asset.id wrong');
-						return;
-					}
-
-				} else {
-					res.statusCode = 403;
-					res.send('asset.id not provided!');
-					return;
-				}
-
-			} else {
-
-        // GET, DELETE, ...
-        call6(req, res, options, body);
+      if(!item_id.startsWith('urn:oc:entity:experimenters')) {
+        res.statusCode = 400;
+        res.send('asset.id prefix wrong');
+        return;
       }
 
+      var urn_parts = item_id.split(':');
+      var urn_main_experimenter_id = urn_parts[4];
+      var urn_experiment_id = urn_parts[5];
+      var urn_asset_id = urn_parts[6];
+
+      console.log('   Prefix:', 'urn:oc:entity:experimenters');
+      console.log('   urn_main_experimenter_id:', urn_main_experimenter_id);
+      console.log('   urn_experiment_id:', urn_experiment_id);
+      console.log('   urn_asset_id:', urn_asset_id);
+
+      // (b) Check for the correct experiment id
+      if(urn_experiment_id !== expid){
+          res.statusCode = 400;
+          res.send('The given experiment id `' + urn_experiment_id + '` within th asset id is wrong');
+          return;
+      }
+
+      // (c) Check, if the main experimenter id within the URN of the asset equals the main experimenter id
+      var optionsCall = {
+        protocol: config.experiment_management_api.protocol,
+        host: config.experiment_management_api.host,
+        port: config.experiment_management_api.port,
+        path: '/experiments/' + expid + '/mainexperimenter',
+        method: 'GET',
+        headers : {
+          'authorization' : 'Bearer ' + access_token
+        }
+      };
+      httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+
+        var responseJson = JSON.parse(responseText);
+        var mainExperimenter = responseJson.mainExperimenter;
+
+        console.log(urn_main_experimenter_id);
+        console.log(mainExperimenter);
+
+        if(urn_main_experimenter_id !== mainExperimenter) {
+          res.statusCode = 400;
+          res.send('The given experimenter id `' + urn_main_experimenter_id + '` within th asset id is wrong');
+          return;
+        }
+        callback();
+      }, errorHandler(res));
+
+    }
+
+
+    // Check the validity of the asset
+    var checkValidityOfAsset = function(req, res, options, body) {
+
+      console.log('### Check the validity of the asset ###');
+
+      if(req.method === 'PUT' || req.method === 'DELETE') {
+
+        var pathname = url.parse(req.url, true).pathname;
+        console.log('pathname:', pathname);
+
+        if(!pathname.startsWith('/v2/entities/urn:oc:entity:experimenters:')) {
+          res.statusCode = 400;
+          res.send('Path must be like /v2/entities/urn:oc:entity:experimenters:...');
+          return;
+        }
+
+        var pathname_parts = pathname.split('/');
+        if(pathname_parts.length != 4) {
+          console.log(pathname_parts.length);
+          res.statusCode = 400;
+          res.send('Path to long or to short!');
+          return;
+        }
+
+        var assetId = pathname_parts[3];
+        console.log('Validate asset.id: ', pathname_parts[3]);
+        validateAssetId(assetId, res, function() {
+          if(req.method === 'PUT') {
+            validateBody(req, res, options, body);
+          } else if(req.method === 'DELETE') {
+            callFinalServer(req, res, options, body);
+          }
+        });
+        return;
+      } else if(req.method === 'POST') {
+        // Handle body
+        validateBody(req, res, options, body);
+      } else {
+        // GET
+        callFinalServer(req, res, options, body);
+      }
     };
 
     // Finally, Call the configured server
-    var call6 = function(req, res, options, body){
+    var callFinalServer = function(req, res, options, body){
 
 			console.log('7) Add FIWARE signature.');
 
@@ -540,6 +575,10 @@ var Root = (function() {
 
           httpClient.sendData(optionsCall, undefined, res, callBackOK, errorHandler(res));
         } else {
+          for (var idx in headers) {
+              var header = headers[idx];
+              res.setHeader(idx, headers[idx]);
+          }
           res.statusCode = status;
           res.send(responseText);
         }

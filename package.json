@@ -13,7 +13,8 @@
     "mocha": "~1.20.1",
     "should": "~4.0.4",
     "xmlhttprequest": "1.8.0",
-    "string.prototype.startswith": "~0.2.0"
+    "string.prototype.startswith": "~0.2.0",
+    "url": "~0.11.0"
   },
   "repository": {
     "type": "git",

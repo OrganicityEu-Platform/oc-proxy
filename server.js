@@ -4,6 +4,37 @@ var config = require('./config'),
     Root = require('./controllers/root').Root,
     errorhandler = require('errorhandler');
 
+var passport = require('passport');
+var JwtBearerStrategy = require('passport-http-jwt-bearer').Strategy;
+var indexOf = require('indexof-shim');
+
+var cert = fs.readFileSync('cert.pem');
+
+passport.use(new JwtBearerStrategy(
+   cert,
+   function(token, done) {
+	var user = {
+		token: token
+	};
+     done(null, user, token);
+   }
+ ));
+
+var rolehandler = function (roles) {
+	return function(req, res, next) {
+		for(var i = 0; i < roles.length; i++) {
+			var role = roles[i];
+			console.log('Check role: ', role);
+			if(indexOf(req.user.token.realm_access.roles, role) >= 0) {
+				req.headers['x-auth-subject'] = req.user.token.sub;
+				next();
+				return;
+			}
+		}
+		res.status(403).send('You dont have to role to access this endpoint!');
+	}
+}
+
 config.https = config.https || {};
 
 var log = require('./lib/logger').logger.getLogger("Server");
@@ -62,7 +93,10 @@ for (var p in config.public_paths) {
     app.all(config.public_paths[p], Root.public);
 }
 
-app.all('/*', Root.pep);
+app.post('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter', 'participant']), Root.pep);
+app.get('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), Root.pep);
+app.put('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), Root.pep);
+app.delete('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), Root.pep);
 
 log.info('Starting OC proxy on port ' + port + '.');
 

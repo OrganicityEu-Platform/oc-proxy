@@ -70,7 +70,7 @@ app.use(function (req, res, next) {
     "use strict";
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'HEAD, POST, PUT, GET, OPTIONS, DELETE');
-    res.header('Access-Control-Allow-Headers', 'origin, content-type, X-Auth-Token, Tenant-ID, Authorization');
+    res.header('Access-Control-Allow-Headers', 'origin, content-type, X-Auth-Token, Tenant-ID, Authorization, x-organicity-application, x-organicity-experiment');
     //log.debug("New Request: ", req.method);
     if (req.method == 'OPTIONS') {
         log.debug("CORS request");

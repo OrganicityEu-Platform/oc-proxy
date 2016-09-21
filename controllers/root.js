@@ -321,6 +321,7 @@ var Root = (function() {
         return;
       }
 
+      console.log(asset.id);
       validateAssetId(asset.id, res, function() {
         var item_type = asset.type;
 

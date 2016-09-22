@@ -13,27 +13,9 @@ var cert = fs.readFileSync('cert.pem');
 passport.use(new JwtBearerStrategy(
    cert,
    function(token, done) {
-	var user = {
-		token: token
-	};
-     done(null, user, token);
+     done(null, {}, token);
    }
  ));
-
-var rolehandler = function (roles) {
-	return function(req, res, next) {
-		for(var i = 0; i < roles.length; i++) {
-			var role = roles[i];
-			console.log('Check role: ', role);
-			if(indexOf(req.user.token.realm_access.roles, role) >= 0) {
-				req.headers['x-auth-subject'] = req.user.token.sub;
-				next();
-				return;
-			}
-		}
-		res.status(403).send('You dont have to role to access this endpoint!');
-	}
-}
 
 config.https = config.https || {};
 
@@ -93,10 +75,10 @@ for (var p in config.public_paths) {
     app.all(config.public_paths[p], Root.public);
 }
 
-app.post('/v2/entities', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter', 'participant']), ProxyStrategy.post);
-app.get('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.get);
-app.put('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.put);
-app.delete('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.delete);
+app.post('/v2/entities', passport.authenticate('jwt-bearer', { session: false }), ProxyStrategy[config.pipeline].post);
+app.get('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ProxyStrategy[config.pipeline].get);
+app.put('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ProxyStrategy[config.pipeline].put);
+app.delete('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ProxyStrategy[config.pipeline].delete);
 
 log.info('Starting OC proxy on port ' + port + '.');
 

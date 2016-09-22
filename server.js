@@ -1,7 +1,7 @@
 var config = require('./config'),
     fs = require('fs'),
     https = require('https'),
-    Root = require('./controllers/root').Root,
+    ProxyStrategy = require('./controllers/proxyStrategy'),
     errorhandler = require('errorhandler');
 
 var passport = require('passport');
@@ -93,10 +93,10 @@ for (var p in config.public_paths) {
     app.all(config.public_paths[p], Root.public);
 }
 
-app.post('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter', 'participant']), Root.post);
-app.get('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), Root.post);
-app.put('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), Root.post);
-app.delete('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), Root.post);
+app.post('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter', 'participant']), ProxyStrategy.post);
+app.get('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.get);
+app.put('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.put);
+app.delete('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.delete);
 
 log.info('Starting OC proxy on port ' + port + '.');
 

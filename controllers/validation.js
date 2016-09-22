@@ -1,6 +1,8 @@
 var config = require('./../config.js');
 var httpClient = require('./../lib/HTTPClient.js');
 var log = require('./../lib/logger').logger.getLogger("Validation");
+var url = require('url');
+require('string.prototype.startswith');
 
 var validation = {};
 
@@ -36,89 +38,92 @@ var errorHandler = function(res, code, msg) {
   }
 }
 
-
-
-validation.checkHeaderOrganicityApplication = function(req, res, options, body, done) {
-  // This header must be privided by the client
-  if(!headerExists(options.headers, 'x-organicity-application', res, true)) {
-    return;
-  }
-  req.oc.appid = options.headers['x-organicity-application'];
+validation.init = function(req, res, done) {
+  req.oc = {};
   done();
 }
 
-validation.checkHeaderOrganicityExperiment = function(req, res, options, body, done) {
+validation.checkHeaderOrganicityApplication = function(req, res, done) {
   // This header must be privided by the client
-  if(!headerExists(options.headers, 'x-organicity-experiment', res, true)) {
+  if(!headerExists(req.headers, 'x-organicity-application', res, true)) {
     return;
   }
-  req.oc.expid = options.headers['x-organicity-experiment'];
+  req.oc.appid = req.headers['x-organicity-application'];
   done();
 }
 
-validation.checkHeaderAuthSub  = function(req, res, options, body, done) {
+validation.checkHeaderOrganicityExperiment = function(req, res, done) {
+  // This header must be privided by the client
+  if(!headerExists(req.headers, 'x-organicity-experiment', res, true)) {
+    return;
+  }
+  req.oc.expid = req.headers['x-organicity-experiment'];
+  done();
+}
+
+validation.checkHeaderAuthSub  = function(req, res, done) {
   // This header is provided by the keycloak proxy
-  if(!headerExists(options.headers, 'x-auth-subject', res, true)) {
+  if(!headerExists(req.headers, 'x-auth-subject', res, true)) {
     return;
   }
-  req.oc.sub = options.headers['x-auth-subject'];
+  req.oc.sub = req.headers['x-auth-subject'];
   done();
 }
 
-validation.checkHeaderAccept  = function(req, res, options, body, done) {
+validation.checkHeaderAccept  = function(req, res, done) {
   // The only valid accept header is JSON
-  if(!headerExists(options.headers, 'accept', res, true)) {
+  if(!headerExists(req.headers, 'accept', res, true)) {
     return;
   }
 
-  if(options.headers['accept'] !== 'application/json') {
+  if(req.headers['accept'] !== 'application/json') {
     res.statusCode = 406;
-    res.send('Accept ' + options.headers['accept'] + ' not acceptable. Please provide application/json');
+    res.send('Accept ' + req.headers['accept'] + ' not acceptable. Please provide application/json');
   }
   done();
 }
 
-validation.checkHeaderContentType  = function(req, res, options, body, done) {
-  if(options.method === 'POST' || options.method === 'PUT') {
+validation.checkHeaderContentType  = function(req, res, done) {
+  if(req.method === 'POST' || req.method === 'PUT') {
     // The only valid content-type header is JSON
-    if(!headerExists(options.headers, 'content-type', res, true)) {
+    if(!headerExists(req.headers, 'content-type', res, true)) {
       return;
     }
-    if(options.headers['content-type'] !== 'application/json') {
+    if(req.headers['content-type'] !== 'application/json') {
       res.statusCode = 406;
-      res.send('Content type ' + options.headers['content-type'] + ' not acceptable. Please provide application/json');
+      res.send('Content type ' + req.headers['content-type'] + ' not acceptable. Please provide application/json');
       return;
     }
   }
   done();
 }
 
-validation.checkHeaderFiWare = function(req, res, options, body, done) {
+validation.checkHeaderFiWare = function(req, res, done) {
 
   // This header must be privided by the client
-  if(!headerExists(options.headers, 'fiware-service', res, false)) {
+  if(!headerExists(req.headers, 'fiware-service', res, false)) {
     return;
   }
 
   // This header must be privided by the client
-  if(!headerExists(options.headers, 'fiware-servicepath', res, false)) {
+  if(!headerExists(req.headers, 'fiware-servicepath', res, false)) {
     return;
   }
 
   done();
 };
 
-validation.printHeader  = function(req, res, options, body, done) {
+validation.printHeader  = function(req, res, done) {
   console.log('### Data extracted from the header');
   console.log('appid:       ', req.oc.appid);
   console.log('expid:       ', req.oc.expid);
   console.log('sub:         ', req.oc.sub);
-  console.log('content-type:', options.headers['content-type']);
-  console.log('accept:      ', options.headers['accept']);
+  console.log('content-type:', req.headers['content-type']);
+  console.log('accept:      ', req.headers['accept']);
   done();
 }
 
-validation.getAccessToken = function(req, res, options, body, done) {
+validation.getAccessToken = function(req, res, done) {
 
   console.log('### Get access token');
 
@@ -143,7 +148,7 @@ validation.getAccessToken = function(req, res, options, body, done) {
 };
 
 // This checks, if the sub is a participant/experimenter of the experiment
-validation.isSubParticipantExperimenterOfExperiment = function(req, res, options, body, done) {
+validation.isSubParticipantExperimenterOfExperiment = function(req, res, done) {
 
   console.log('### Is sub a participant/experimenter of the experiment?');
 
@@ -187,7 +192,7 @@ validation.isSubParticipantExperimenterOfExperiment = function(req, res, options
 };
 
 // Check whether an application belongs to one experiment
-validation.doesApplicationbelongToAnExperiment = function(req, res, options, body, done) {
+validation.doesApplicationbelongToAnExperiment = function(req, res, done) {
 
   console.log('### Does an application belong to one experiment?');
 
@@ -207,7 +212,7 @@ validation.doesApplicationbelongToAnExperiment = function(req, res, options, bod
   }, errorHandler(res, 400, 'This application does not belong to the experiment'));
 };
 
-validation.isExperimentRunning = function(req, res, options, body, done) {
+validation.isExperimentRunning = function(req, res, done) {
   console.log('### Is the experiment running?');
 
   var optionsCall = {
@@ -227,8 +232,8 @@ validation.isExperimentRunning = function(req, res, options, body, done) {
 };
 
 // Does the experiment have quota
-validation.doesExperimentHaveQuota = function(req, res, options, body, done) {
-  if(options.method === 'POST') {
+validation.doesExperimentHaveQuota = function(req, res, done) {
+  if(req.method === 'POST') {
     console.log('### Does the experiment have quota?');
 
     var optionsCall = {
@@ -325,7 +330,7 @@ var validateAssetId = function(item_id, req, res, callback) {
 
 }
 
-validation.checkValidityOfAssetId = function(req, res, options, body, done) {
+validation.checkValidityOfAssetId = function(req, res, done) {
 
   if(req.method === 'PUT' || req.method === 'DELETE') {
     console.log('### Check the validity of the asset ID ###');
@@ -355,14 +360,14 @@ validation.checkValidityOfAssetId = function(req, res, options, body, done) {
   }
 };
 
-validation.checkValidityOfAsset = function(req, res, options, body, done) {
+validation.checkValidityOfAsset = function(req, res, done) {
 
   if(req.method === 'POST') {
     console.log('### Check the validity of the body');
 
     // Handle body
 
-    if(!body) {
+    if(!req.body) {
       res.statusCode = 400;
       res.send('No body provided!');
       return;
@@ -370,7 +375,7 @@ validation.checkValidityOfAsset = function(req, res, options, body, done) {
 
     var asset;
     try {
-      asset = JSON.parse(body);
+      asset = JSON.parse(req.body.toString('utf8'));
     } catch (e) {
       res.statusCode = 400;
       res.send('Body is not valid JSON!');
@@ -468,20 +473,47 @@ validation.checkValidityOfAsset = function(req, res, options, body, done) {
   }
 };
 
-validation.addFiWareSignature = function(req, res, options, body, done) {
+validation.addFiWareSignature = function(req, res, done) {
   console.log('### Add FIWARE signature.');
-  options.headers['Fiware-Service'] = 'organicity';
-  options.headers['Fiware-ServicePath'] = '/';
+  req.headers['Fiware-Service'] = 'organicity';
+  req.headers['Fiware-ServicePath'] = '/';
   done();
 };
 
-validation.sendResponse = function(req, res, options, body, done) {
-    res.send(res.responseText);
+// Finally, Call the configured server
+validation.callFinalServer = function(req, res, done){
+
+  console.log('### Forward message to the configured server.');
+
+  // Add x-forwarded-for header
+  req.headers = httpClient.getClientIp(req, req.headers);
+
+  var options = {
+    method: req.method,
+    headers: req.headers,
+    protocol: config.application_endpoint.protocol,
+    host: config.application_endpoint.host,
+    port: config.application_endpoint.port,
+    path: req.url
+  };
+
+  httpClient.sendData(options, req.body, res,
+  function(status, responseText, headers) {
+    console.log('status', status);
+    console.log('responseText', responseText);
+    res.oc = {
+      statusCode : status,
+      headers : headers,
+      responseText : responseText
+    }
+    done();
+  });
 };
 
-validation.decreaseQuota = function(req, res, options, body, done) {
 
-  if(options.method === 'POST') {
+validation.decreaseQuota = function(req, res, done) {
+
+  if(req.method === 'POST') {
     console.log('### Decrease the Quota');
 
     var optionsCall = {
@@ -501,8 +533,8 @@ validation.decreaseQuota = function(req, res, options, body, done) {
   done();
 }
 
-validation.increaseQuota = function(req, res, options, body, done) {
-  if(options.method === 'DELETE') {
+validation.increaseQuota = function(req, res, done) {
+  if(req.method === 'DELETE') {
     console.log('### Increase the Quota');
 
     var optionsCall = {
@@ -522,26 +554,15 @@ validation.increaseQuota = function(req, res, options, body, done) {
   done();
 };
 
-// Finally, Call the configured server
-validation.callFinalServer = function(req, res, options, body, done){
-
-  console.log('### Forward message to the configured server.');
-
-  // Add x-forwarded-for header
-  options.headers = httpClient.getClientIp(req, req.headers);
-
-  httpClient.sendData(options, body, res,
-  function(status, responseText, headers) {
-    // Prepare the response
-    res.statusCode = status;
-    for (var idx in headers) {
-        var header = headers[idx];
-        res.setHeader(idx, headers[idx]);
-    }
-    res.responseText = responseText;
-    done();
-  });
+validation.sendResponse = function(req, res, done) {
+  console.log('### Send response');
+  // Prepare the response
+  res.statusCode = res.oc.statusCode;
+  for (var idx in res.oc.headers) {
+      var header = res.oc.headers[idx];
+      res.setHeader(idx, res.oc.headers[idx]);
+  }
+  res.send(res.oc.responseText);
 };
-
 
 module.exports = validation;

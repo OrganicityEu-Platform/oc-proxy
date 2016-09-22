@@ -1,16 +1,17 @@
 {
   "appenders": [
-    { 
+    {
       "type": "console",
       "layout": {
         "type": "pattern",
         "pattern": "%d  - %p: %c - %m",
         "replaceConsole": true
-      } 
+      }
     }
   ],
   "levels": {
   	"Server": "DEBUG",
+  	"Validation": "DEBUG",
     "Root": "INFO",
     "HTTP-Client": "WARN",
     "AZF-Client": "INFo",

@@ -32,6 +32,8 @@ var ProxyStrategy = (function() {
     return {
       central : {
         post : [
+	  validation.init,
+	  validation.rolehandler(['ocsite']),
           validation.callFinalServer,
           validation.sendResponse
         ],

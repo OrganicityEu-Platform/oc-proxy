@@ -2,6 +2,7 @@ var config = require('./../config.js');
 var httpClient = require('./../lib/HTTPClient.js');
 var log = require('./../lib/logger').logger.getLogger("Validation");
 var url = require('url');
+var indexOf = require('indexof-shim');
 
 require('string.prototype.startswith');
 

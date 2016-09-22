@@ -13,7 +13,7 @@ var cert = fs.readFileSync('cert.pem');
 passport.use(new JwtBearerStrategy(
    cert,
    function(token, done) {
-     done(null, {}, token);
+     done(null, {token: token}, token);
    }
  ));
 

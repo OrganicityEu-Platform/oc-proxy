@@ -278,7 +278,7 @@ var validateAssetId = function(item_id, req, res, callback) {
 
   console.log('id: ', item_id);
 
-  if(!item_id.startsWith('urn:oc:entity:experimenters')) {
+  if(!item_id.startsWith('urn:oc:entity:experimenters:')) {
     res.statusCode = 400;
     res.send('asset.id prefix wrong');
     return;
@@ -331,33 +331,7 @@ var validateAssetId = function(item_id, req, res, callback) {
 }
 
 validation.checkValidityOfAssetId = function(req, res, done) {
-
-  if(req.method === 'PUT' || req.method === 'DELETE') {
-    console.log('### Check the validity of the asset ID ###');
-
-    var pathname = url.parse(req.url, true).pathname;
-    console.log('pathname:', pathname);
-
-    if(!pathname.startsWith('/v2/entities/urn:oc:entity:experimenters:')) {
-      res.statusCode = 400;
-      res.send('Path must be like /v2/entities/urn:oc:entity:experimenters:...');
-      return;
-    }
-
-    var pathname_parts = pathname.split('/');
-    if(pathname_parts.length != 4) {
-      console.log(pathname_parts.length);
-      res.statusCode = 400;
-      res.send('Path to long or to short!');
-      return;
-    }
-
-    var assetId = pathname_parts[3];
-    console.log('Validate asset.id: ', pathname_parts[3]);
-    validateAssetId(assetId, req, res, done);
-  } else {
-    done();
-  }
+  validateAssetId(req.params.assetId, req, res, done);
 };
 
 validation.checkValidityOfAsset = function(req, res, done) {

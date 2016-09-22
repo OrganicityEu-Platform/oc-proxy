@@ -93,10 +93,10 @@ for (var p in config.public_paths) {
     app.all(config.public_paths[p], Root.public);
 }
 
-app.post('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter', 'participant']), ProxyStrategy.post);
-app.get('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.get);
-app.put('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.put);
-app.delete('/*', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.delete);
+app.post('/v2/entities', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter', 'participant']), ProxyStrategy.post);
+app.get('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.get);
+app.put('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.put);
+app.delete('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), rolehandler(['experimenter']), ProxyStrategy.delete);
 
 log.info('Starting OC proxy on port ' + port + '.');
 

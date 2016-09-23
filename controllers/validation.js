@@ -373,7 +373,7 @@ validation.checkValidityOfAssetId = function(req, res, next) {
 };
 
 // This handler gets gets the body as JSON and adds it
-// ad req.oc.asset
+// add it as req.oc.asset
 validation.getAssetFromBody = function(req, res, next) {
 
   console.log('### Get the Asset from the body');
@@ -453,7 +453,7 @@ validation.checkValidityOfExperimenterAsset = function(req, res, next) {
 
   console.log('### Check the validity of the Asset (experimenters)');
 
-  var asset = req.asset;
+  var asset = req.oc.asset;
 
   validateExperimenterAssetId(asset.id, req, res, function() {
     var item_type = asset.type;

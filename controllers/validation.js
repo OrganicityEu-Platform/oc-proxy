@@ -120,20 +120,9 @@ validation.checkHeaderFiware  = function(req, res, next) {
     return;
   }
 
-  // This header must be privided by the client
-  if(!headerExists(req.headers, 'fiware-servicepath', res, true)) {
-    return;
-  }
-
   if(req.headers['fiware-service'] !== 'organicity') {
     res.statusCode = 406;
     res.send('HTTP header Fiware-Service ' + req.headers['fiware-service'] + ' not acceptable.');
-    return;
-  }
-
-  if(req.headers['fiware-servicepath'] !== '/') {
-    res.statusCode = 406;
-    res.send('HTTP header Fiware-Servicepath ' + req.headers['fiware-service'] + ' not acceptable.');
     return;
   }
 

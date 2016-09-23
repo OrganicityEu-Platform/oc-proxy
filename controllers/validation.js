@@ -95,7 +95,7 @@ validation.checkHeaderAccept  = function(req, res, next) {
 
   if(req.headers['accept'] !== 'application/json') {
     res.statusCode = 406;
-    res.send('Accept ' + req.headers['accept'] + ' not acceptable. Please provide application/json');
+    res.send('HTTP header Accept ' + req.headers['accept'] + ' not acceptable. Please provide application/json');
   }
   next();
 };
@@ -107,13 +107,40 @@ validation.checkHeaderContentType  = function(req, res, next) {
   }
   if(req.headers['content-type'] !== 'application/json') {
     res.statusCode = 406;
-    res.send('Content type ' + req.headers['content-type'] + ' not acceptable. Please provide application/json');
+    res.send('HTTP header Content-Type ' + req.headers['content-type'] + ' not acceptable. Please provide application/json');
     return;
   }
   next();
 };
 
-validation.checkHeaderFiWare = function(req, res, next) {
+validation.checkHeaderFiware  = function(req, res, next) {
+
+  // This header must be privided by the client
+  if(!headerExists(req.headers, 'fiware-service', res, true)) {
+    return;
+  }
+
+  // This header must be privided by the client
+  if(!headerExists(req.headers, 'fiware-servicepath', res, true)) {
+    return;
+  }
+
+  if(req.headers['fiware-service'] !== 'organicity') {
+    res.statusCode = 406;
+    res.send('HTTP header Fiware-Service ' + req.headers['fiware-service'] + ' not acceptable.');
+    return;
+  }
+
+  if(req.headers['fiware-servicepath'] !== '/') {
+    res.statusCode = 406;
+    res.send('HTTP header Fiware-Servicepath ' + req.headers['fiware-service'] + ' not acceptable.');
+    return;
+  }
+
+  next();
+};
+
+validation.checkHeaderFiwareAbstinence = function(req, res, next) {
 
   // This header must be privided by the client
   if(!headerExists(req.headers, 'fiware-service', res, false)) {
@@ -127,6 +154,7 @@ validation.checkHeaderFiWare = function(req, res, next) {
 
   next();
 };
+
 
 validation.printHeader  = function(req, res, next) {
   console.log('### Data extracted from the header');
@@ -273,8 +301,7 @@ validation.doesExperimentHaveQuota = function(req, res, next) {
   }, errorHandler(res));
 };
 
-
-var validateAssetId = function(item_id, req, res, callback) {
+var validateExperimenterAssetId = function(item_id, req, res, callback) {
   // Example
   // urn:oc:entity:experimenters:86d7edce-5092-44c0-bed8-da4beaa3fbc6:57d64f9cffd7cce42504bde3:4333
   // [0][1] [2]    [3]           [4]                                  [5]                      [6]
@@ -342,12 +369,14 @@ var validateAssetId = function(item_id, req, res, callback) {
 }
 
 validation.checkValidityOfAssetId = function(req, res, next) {
-  validateAssetId(req.params.assetId, req, res, next);
+  validateExperimenterAssetId(req.params.assetId, req, res, next);
 };
 
-validation.checkValidityOfAsset = function(req, res, next) {
+// This handler gets gets the body as JSON and adds it
+// ad req.oc.asset
+validation.getAssetFromBody = function(req, res, next) {
 
-  console.log('### Check the validity of the body');
+  console.log('### Get the Asset from the body');
 
   // Handle body
   if(!req.body) {
@@ -356,23 +385,77 @@ validation.checkValidityOfAsset = function(req, res, next) {
     return;
   }
 
-  var asset;
   try {
-    asset = JSON.parse(req.body.toString('utf8'));
+    req.oc.asset = JSON.parse(req.body.toString('utf8'));
   } catch (e) {
     res.statusCode = 400;
     res.send('Body is not valid JSON!');
     return;
   }
+  next();
 
-  if(asset.id === undefined){
-    res.statusCode = 403;
-    res.send('asset.id not provided!');
+};
+
+// This handler checks, if the id from the token (e.g., site) and the
+// assetid within the Asset are the same
+// If valid, req.oc.sitename will contain the sitename
+validation.checkValidityOfSiteAsset = function(req, res, next) {
+
+  console.log('### Check the validity of the Asset (site)');
+
+  // ID within the asset:      urn:oc:entity:<SITENAME>
+  // ID within the user token: ocsite-<SITENAME>
+
+  // OC sites are Clients, thus, we grab the client id from the Access Token
+  var clientId = req.user.token.clientId;
+  if(!clientId) {
+    res.statusCode = 400;
+    res.send('You are not a client!');
     return;
   }
 
-  console.log(asset.id);
-  validateAssetId(asset.id, req, res, function() {
+  var clientIdParts = clientId.split('-');
+
+  if(clientIdParts.length != 2) {
+    res.statusCode = 400;
+    res.send('ClientID wrong');
+    return;
+  }
+
+  if(clientIdParts[0] != 'ocsite') {
+    res.statusCode = 400;
+    res.send('ClientID wrong. You`re not an OC site.');
+    return;
+  }
+
+  var sitename = clientIdParts[1];
+  req.oc.sitename = sitename;
+  var allowedPrefix = 'urn:oc:entity:' + sitename + ':';
+
+  // The AssetID is an attribute `id` within the asset
+  var assetId = req.oc.asset.id;
+
+  //console.log(assetId);
+  //console.log(allowedPrefix);
+
+  // Check, if the prefix of the asset is correct
+  if(!assetId.startsWith(allowedPrefix)) {
+    res.statusCode = 400;
+    res.send('asset.id prefix wrong');
+    return;
+  }
+
+  // Site is authorized to push assets with that prefix
+  next();
+};
+
+validation.checkValidityOfExperimenterAsset = function(req, res, next) {
+
+  console.log('### Check the validity of the Asset (experimenters)');
+
+  var asset = req.asset;
+
+  validateExperimenterAssetId(asset.id, req, res, function() {
     var item_type = asset.type;
 
     // (d) Check, if non allowed attributes are used
@@ -452,7 +535,7 @@ validation.checkValidityOfAsset = function(req, res, next) {
         });
       }
     }, errorHandler(res));
-  }); // validateAssetId
+  });
 };
 
 validation.addFiWareSignature = function(req, res, next) {

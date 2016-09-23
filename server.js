@@ -1,7 +1,7 @@
 var config = require('./config'),
     fs = require('fs'),
     https = require('https'),
-    ProxyStrategy = require('./controllers/proxyStrategy'),
+    ChainsOfResponsibility = require('./controllers/ChainsOfResponsibility'),
     errorhandler = require('errorhandler');
 
 var passport = require('passport');
@@ -75,10 +75,10 @@ for (var p in config.public_paths) {
     app.all(config.public_paths[p], Root.public);
 }
 
-app.post('/v2/entities', passport.authenticate('jwt-bearer', { session: false }), ProxyStrategy[config.pipeline].post);
-app.get('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ProxyStrategy[config.pipeline].get);
-app.put('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ProxyStrategy[config.pipeline].put);
-app.delete('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ProxyStrategy[config.pipeline].delete);
+app.post('/v2/entities', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].post);
+app.get('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].get);
+app.put('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].put);
+app.delete('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].delete);
 
 log.info('Starting OC proxy on port ' + port + '.');
 

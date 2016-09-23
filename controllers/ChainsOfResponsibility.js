@@ -2,38 +2,16 @@ var validation = require('./validation');
 
 var log = require('./../lib/logger').logger.getLogger("Root");
 
-var ProxyStrategy = (function() {
-
-  /*
-    var strategy = [
-      validation.init,
-      validation.checkHeaderOrganicityApplication,
-      validation.checkHeaderOrganicityExperiment,
-      validation.checkHeaderAuthSub,
-      validation.checkHeaderAccept,
-      validation.checkHeaderContentType, // Only on POST
-      validation.checkHeaderFiWare,
-      validation.printHeader,
-      validation.getAccessToken,
-      validation.isSubParticipantExperimenterOfExperiment,
-      validation.doesApplicationbelongToAnExperiment,
-      validation.isExperimentRunning,
-      validation.doesExperimentHaveQuota, // Only on POST
-      validation.checkValidityOfAssetId, // Only on GET/PUT/DELETE
-      validation.checkValidityOfAsset, // Only on POST
-      validation.addFiWareSignature,
-      validation.callFinalServer,
-      validation.decreaseQuota, // Only on POST
-      validation.increaseQuota, // Only on DELETE
-      validation.sendResponse
-    ];
-    */
+var ChainsOfResponsibility = (function() {
 
     return {
       central : {
         post : [
-	  validation.init,
-	  validation.rolehandler(['ocsite']),
+          validation.init,
+          validation.rolehandler(['ocsite']),
+          validation.checkHeaderFiware,
+          validation.getAssetFromBody,
+          validation.checkValidityOfSiteAsset,
           validation.callFinalServer,
           validation.sendResponse
         ],
@@ -50,14 +28,15 @@ var ProxyStrategy = (function() {
           validation.checkHeaderAuthSub,
           validation.checkHeaderAccept,
           validation.checkHeaderContentType, // Only on POST
-          validation.checkHeaderFiWare,
+          validation.checkHeaderFiwareAbstinence,
           validation.printHeader,
           validation.getAccessToken,
           validation.isSubParticipantExperimenterOfExperiment,
           validation.doesApplicationbelongToAnExperiment,
           validation.isExperimentRunning,
           validation.doesExperimentHaveQuota, // Only on POST
-          validation.checkValidityOfAsset, // Only on POST
+          validation.getAssetFromBody,
+          validation.checkValidityOfExperimenterAsset, // Only on POST
           validation.addFiWareSignature,
           validation.callFinalServer,
           //validation.decreaseQuota, // Only on POST
@@ -124,4 +103,4 @@ var ProxyStrategy = (function() {
 
 })();
 
-module.exports = ProxyStrategy;
+module.exports = ChainsOfResponsibility;

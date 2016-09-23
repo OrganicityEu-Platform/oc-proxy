@@ -10,8 +10,7 @@ config.https = {
     port: 443
 };
 
-config.pipeline = "central"; // experimenter
-
+config.chain = ""; // One of: central, experimenter
 config.client_id = "";
 config.client_secret = "";
 config.bad_asset_attributes = ['urn:oc:attributeType:reputation'];

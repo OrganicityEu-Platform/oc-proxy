@@ -170,9 +170,9 @@ validation.getAccessToken = function(req, res, next) {
     }
   };
 
-  var body2 = 'grant_type=client_credentials&client_id=' + config.client_id + '&client_secret=' + config.client_secret;
+  var payload = 'grant_type=client_credentials&client_id=' + config.client_id + '&client_secret=' + config.client_secret;
 
-  httpClient.sendData(optionsCall, body2, res, function(status, responseText, headers) {
+  httpClient.sendData(optionsCall, payload, res, function(status, responseText, headers) {
     var token = JSON.parse(responseText);
     req.oc.access_token = token.access_token;
     next();
@@ -280,8 +280,10 @@ validation.doesExperimentHaveQuota = function(req, res, next) {
 
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
     var responseJson = JSON.parse(responseText);
-    console.log('Quota: ', responseJson.remainingQuota);
-    if(responseJson.remainingQuota > 0) {
+    var quota = responseJson.remainingQuota;
+
+    console.log('Quota: ', quota);
+    if(quota > 0) {
       next();
     } else {
       res.statusCode = 400;
@@ -290,7 +292,29 @@ validation.doesExperimentHaveQuota = function(req, res, next) {
   }, errorHandler(res));
 };
 
-var validateExperimenterAssetId = function(item_id, req, res, callback) {
+// req.oc.sitename must be known prior from the token!
+validateSiteAssetId = function(assetId, req, res, next) {
+
+  console.log('### Check the validity of the assetId (site)');
+
+  // ID within the user token: ocsite-<SITENAME>
+  // ID within the asset:      urn:oc:entity:<SITENAME>
+  var allowedPrefix = 'urn:oc:entity:' + req.oc.sitename + ':';
+
+  console.log(assetId);
+  console.log(allowedPrefix);
+
+  // Check, if the prefix of the asset is correct
+  if(!assetId.startsWith(allowedPrefix)) {
+    res.statusCode = 400;
+    res.send('asset.id prefix wrong');
+    return;
+  }
+
+  next();
+};
+
+var validateExperimenterAssetId = function(assetId, req, res, next) {
   // Example
   // urn:oc:entity:experimenters:86d7edce-5092-44c0-bed8-da4beaa3fbc6:57d64f9cffd7cce42504bde3:4333
   // [0][1] [2]    [3]           [4]                                  [5]                      [6]
@@ -301,17 +325,17 @@ var validateExperimenterAssetId = function(item_id, req, res, callback) {
   // [5] - experiment id
   // [6] - assetid
 
-  console.log('### Check the validity of the assetId');
+  console.log('### Check the validity of the assetId (experimenter)');
 
-  console.log('id: ', item_id);
+  console.log('id: ', assetId);
 
-  if(!item_id.startsWith('urn:oc:entity:experimenters:')) {
+  if(!assetId.startsWith('urn:oc:entity:experimenters:')) {
     res.statusCode = 400;
     res.send('asset.id prefix wrong');
     return;
   }
 
-  var urn_parts = item_id.split(':');
+  var urn_parts = assetId.split(':');
   var urn_main_experimenter_id = urn_parts[4];
   var urn_experiment_id = urn_parts[5];
   var urn_asset_id = urn_parts[6];
@@ -352,13 +376,17 @@ var validateExperimenterAssetId = function(item_id, req, res, callback) {
       res.send('The given experimenter id `' + urn_main_experimenter_id + '` within th asset id is wrong');
       return;
     }
-    callback();
+    next();
   }, errorHandler(res));
 
 }
 
-validation.checkValidityOfAssetId = function(req, res, next) {
+validation.checkValidityOfExperimentAssetId = function(req, res, next) {
   validateExperimenterAssetId(req.params.assetId, req, res, next);
+};
+
+validation.checkValidityOfSiteAssetId = function(req, res, next) {
+  validateSiteAssetId(req.params.assetId, req, res, next);
 };
 
 // This handler gets gets the body as JSON and adds it
@@ -385,17 +413,10 @@ validation.getAssetFromBody = function(req, res, next) {
 
 };
 
-// This handler checks, if the id from the token (e.g., site) and the
-// assetid within the Asset are the same
-// If valid, req.oc.sitename will contain the sitename
-validation.checkValidityOfSiteAsset = function(req, res, next) {
-
-  console.log('### Check the validity of the Asset (site)');
-
-  // ID within the asset:      urn:oc:entity:<SITENAME>
-  // ID within the user token: ocsite-<SITENAME>
-
+validation.checkSiteToken = function(req, res, next) {
+  console.log('### Check site token');
   // OC sites are Clients, thus, we grab the client id from the Access Token
+
   var clientId = req.user.token.clientId;
   if(!clientId) {
     res.statusCode = 400;
@@ -417,25 +438,28 @@ validation.checkValidityOfSiteAsset = function(req, res, next) {
     return;
   }
 
+  // ID within the user token: ocsite-<SITENAME>
   var sitename = clientIdParts[1];
   req.oc.sitename = sitename;
-  var allowedPrefix = 'urn:oc:entity:' + sitename + ':';
+  next();
+};
+
+// This handler checks, if the id from the token (e.g., site) and the
+// assetid within the Asset are the same
+// If valid, req.oc.sitename will contain the sitename
+validation.checkValidityOfSiteAsset = function(req, res, next) {
+
+  console.log('### Check the validity of the Asset (site)');
+  var asset = req.oc.asset;
 
   // The AssetID is an attribute `id` within the asset
-  var assetId = req.oc.asset.id;
+  validateSiteAssetId(asset.id, req, res, function() {
+    // Site is authorized to push assets with that prefix
 
-  //console.log(assetId);
-  //console.log(allowedPrefix);
+    //TODO: Futher checks
 
-  // Check, if the prefix of the asset is correct
-  if(!assetId.startsWith(allowedPrefix)) {
-    res.statusCode = 400;
-    res.send('asset.id prefix wrong');
-    return;
-  }
-
-  // Site is authorized to push assets with that prefix
-  next();
+    next();
+  });
 };
 
 validation.checkValidityOfExperimenterAsset = function(req, res, next) {
@@ -551,10 +575,8 @@ validation.callFinalServer = function(req, res, next){
     path: req.url
   };
 
-  httpClient.sendData(options, req.body, res,
-  function(status, responseText, headers) {
-    console.log('status', status);
-    console.log('responseText', responseText);
+  //
+  httpClient.sendData(options, req.oc.asset, res, function(status, responseText, headers) {
     res.oc = {
       statusCode : status,
       headers : headers,
@@ -565,7 +587,7 @@ validation.callFinalServer = function(req, res, next){
 };
 
 
-validation.decreaseQuota = function(req, res, next) {
+validation.decreaseExperimentQuota = function(req, res, next) {
 
   console.log('### Decrease the Quota');
 
@@ -583,7 +605,7 @@ validation.decreaseQuota = function(req, res, next) {
   httpClient.sendData(optionsCall, undefined, res, next, errorHandler(res));
 }
 
-validation.increaseQuota = function(req, res, next) {
+validation.increaseExperimentQuota = function(req, res, next) {
   console.log('### Increase the Quota');
 
   var optionsCall = {
@@ -598,6 +620,113 @@ validation.increaseQuota = function(req, res, next) {
   };
 
   httpClient.sendData(optionsCall, undefined, res, next, errorHandler(res));
+};
+
+validation.doesSiteHaveQuota = function (req, res, next) {
+
+  console.log('### Does site have quota?');
+
+  var optionsCall = {
+    protocol: config.platform_management_api.protocol,
+    host: config.platform_management_api.host,
+    port: config.platform_management_api.port,
+    path: '/v1/sites/' + req.oc.sitename,
+    method: 'GET',
+    headers : {
+      'authorization' : 'Bearer ' + req.oc.access_token
+    }
+  };
+
+  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+    var responseJson = JSON.parse(responseText);
+    var quota = responseJson.remQuota;
+    console.log('Quota: ', quota);
+    if(quota > 0) {
+      next();
+    } else {
+      res.statusCode = 400;
+      res.send('The site reached the quota!');
+    }
+  });
+};
+
+validation.increaseSiteQuota = function(req, res, next) {
+  console.log('### Increase Site Quota');
+  var optionsCall = {
+    protocol: config.platform_management_api.protocol,
+    host: config.platform_management_api.host,
+    port: config.platform_management_api.port,
+    path: '/v1/sites/' + req.oc.sitename + '/quota/increment',
+    method: 'GET',
+    headers : {
+      'authorization' : 'Bearer ' + req.oc.access_token
+    }
+  };
+
+  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+    next();
+  });
+};
+
+validation.decreaseSiteQuota = function(req, res, next) {
+  console.log('### Decrease Site Quota');
+
+  var optionsCall = {
+    protocol: config.platform_management_api.protocol,
+    host: config.platform_management_api.host,
+    port: config.platform_management_api.port,
+    path: '/v1/sites/' + req.oc.sitename + '/quota/decrement',
+    method: 'GET',
+    headers : {
+      'authorization' : 'Bearer ' + req.oc.access_token
+    }
+  };
+
+  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+    next();
+  });
+};
+
+validation.addSitePrivacy = function(req, res, next) {
+  console.log('### Add Site Privacy');
+
+  var addPrivacy = function (privacy) {
+    req.oc.asset['access:scope'] = {
+      "type": "urn:oc:attributeType:access:scope",
+      "value": privacy
+    }
+    next();
+  }
+
+  if(req.oc.sitename === 'experimenters') {
+    // get /emscheck/assets-public/{expId}
+    console.log('Get privacy from Luis');
+    var assetId = req.oc.asset.id;
+    var assetIdParts = assetId.split(':');
+    var expId = assetIdParts[5];
+
+    var optionsCall = {
+      protocol: config.experiment_management_api.protocol,
+      host: config.experiment_management_api.host,
+      port: config.experiment_management_api.port,
+      path: '/emscheck/assets-public/' + expId,
+      method: 'GET',
+      headers : {
+        'authorization' : 'Bearer: ' + req.oc.access_token
+      }
+    };
+
+    httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+      // The experiment has _public_ assets
+      addPrivacy('public');
+    }, function(status, responseText, headers) {
+      // The experiment has _private_ assets
+      addPrivacy('private');
+    });
+
+  } else {
+    addPrivacy('public');
+  }
 };
 
 validation.sendResponse = function(req, res, next) {

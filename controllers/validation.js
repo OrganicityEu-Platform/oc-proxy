@@ -4,12 +4,19 @@ var log = require('./../lib/logger').logger.getLogger("Validation");
 var url = require('url');
 var indexOf = require('indexof-shim');
 
+var redis = require("redis").createClient();
+var lock = require("redis-lock")(redis);
+
+var jwt = require('jsonwebtoken');
+var fs = require('fs');
+var cert = fs.readFileSync('cert.pem');
+
 require('string.prototype.startswith');
 
 var validation = {};
 
 var headerExists = function (headers, name, res, allowed) {
-  console.log('Check for header: ', name, ' . ', allowed);
+  console.log('### Check for header: ', name, ' ', allowed);
 
   // Header is mandatory
   if(allowed) {
@@ -49,13 +56,15 @@ validation.rolehandler = function (roles) {
 	return function(req, res, next) {
 		for(var i = 0; i < roles.length; i++) {
 			var role = roles[i];
-			console.log('Check role: ', role);
+			console.log('\n### Check role: ', role);
 			if(indexOf(req.user.token.realm_access.roles, role) >= 0) {
 				req.headers['x-auth-subject'] = req.user.token.sub;
+        console.log('found');
 				next();
 				return;
 			}
 		}
+    console.log('not found');
 		res.status(403).send('You dont have to role to access this endpoint!');
 	}
 };
@@ -146,7 +155,7 @@ validation.checkHeaderFiwareAbstinence = function(req, res, next) {
 
 
 validation.printHeader  = function(req, res, next) {
-  console.log('### Data extracted from the header');
+  console.log('\n### Data extracted from the header');
   console.log('appid:       ', req.oc.appid);
   console.log('expid:       ', req.oc.expid);
   console.log('sub:         ', req.oc.sub);
@@ -157,32 +166,59 @@ validation.printHeader  = function(req, res, next) {
 
 validation.getAccessToken = function(req, res, next) {
 
-  console.log('### Get access token');
+  console.log('\n### Get access token');
 
-  var optionsCall = {
-    protocol: config.accounts_token_endpoint.protocol,
-    host: config.accounts_token_endpoint.host,
-    port: config.accounts_token_endpoint.port,
-    path: config.accounts_token_endpoint.path,
-    method: 'POST',
-    headers: {
-      'Content-Type' : 'application/x-www-form-urlencoded'
+  console.log('Get access token from cache');
+  lock("oc.accessToken", function(unlock) {
+    var done = function() {
+      unlock(); // unlock
+      next(); // next step in chain
     }
-  };
 
-  var payload = 'grant_type=client_credentials&client_id=' + config.client_id + '&client_secret=' + config.client_secret;
+    redis.get("oc.accessToken", function (err, reply) {
+      if(err || !reply) {
+        console.log('No access token in cache. Renew token!');
 
-  httpClient.sendData(optionsCall, payload, res, function(status, responseText, headers) {
-    var token = JSON.parse(responseText);
-    req.oc.access_token = token.access_token;
-    next();
-  });
+        var optionsCall = {
+          protocol: config.accounts_token_endpoint.protocol,
+          host: config.accounts_token_endpoint.host,
+          port: config.accounts_token_endpoint.port,
+          path: config.accounts_token_endpoint.path,
+          method: 'POST',
+          headers: {
+            'Content-Type' : 'application/x-www-form-urlencoded'
+          }
+        };
+
+        var payload = 'grant_type=client_credentials&client_id=' + config.client_id + '&client_secret=' + config.client_secret;
+
+        httpClient.sendData(optionsCall, payload, res, function(status, responseText, headers) {
+          var token = JSON.parse(responseText);
+          req.oc.access_token = token.access_token;
+          redis.setex("oc.accessToken", ((4*60) + 30), token.access_token, done);
+        },function(status, resp) {
+          done();
+          log.error("Error: ", status, resp);
+          res.statusCode = status;
+          res.send(resp);
+        });
+
+      } else {
+        var decoded = jwt.verify(reply.toString(), cert);
+        var now = Math.floor(Date.now() / 1000);
+        var sec = decoded.exp - now;
+        console.log('Use access token from the cache. Expires in ', sec, 's');
+
+        req.oc.access_token = reply.toString();
+        done();
+      }
+    }); // get
+	}); // lock
 };
 
 // This checks, if the sub is a participant/experimenter of the experiment
 validation.isSubParticipantExperimenterOfExperiment = function(req, res, next) {
-
-  console.log('### Is sub a participant/experimenter of the experiment?');
+  console.log('\n### Is sub a participant/experimenter of the experiment?');
 
   // Check whether an experimenter is the owner of one experiment
   // GET /emscheck/experimentowner/{experId}/{expId}
@@ -226,7 +262,7 @@ validation.isSubParticipantExperimenterOfExperiment = function(req, res, next) {
 // Check whether an application belongs to one experiment
 validation.doesApplicationbelongToAnExperiment = function(req, res, next) {
 
-  console.log('### Does an application belong to one experiment?');
+  console.log('\n### Does an application belong to one experiment?');
 
   var optionsCall = {
     protocol: config.experiment_management_api.protocol,
@@ -245,7 +281,7 @@ validation.doesApplicationbelongToAnExperiment = function(req, res, next) {
 };
 
 validation.isExperimentRunning = function(req, res, next) {
-  console.log('### Is the experiment running?');
+  console.log('\n### Is the experiment running?');
 
   var optionsCall = {
     protocol: config.experiment_management_api.protocol,
@@ -265,7 +301,7 @@ validation.isExperimentRunning = function(req, res, next) {
 
 // Does the experiment have quota
 validation.doesExperimentHaveQuota = function(req, res, next) {
-  console.log('### Does the experiment have quota?');
+  console.log('\n### Does the experiment have quota?');
 
   var optionsCall = {
     protocol: config.experiment_management_api.protocol,
@@ -295,7 +331,7 @@ validation.doesExperimentHaveQuota = function(req, res, next) {
 // req.oc.sitename must be known prior from the token!
 validateSiteAssetId = function(assetId, req, res, next) {
 
-  console.log('### Check the validity of the assetId (site)');
+  console.log('\n### Check the validity of the assetId (site)');
 
   // ID within the user token: ocsite-<SITENAME>
   // ID within the asset:      urn:oc:entity:<SITENAME>
@@ -325,7 +361,7 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
   // [5] - experiment id
   // [6] - assetid
 
-  console.log('### Check the validity of the assetId (experimenter)');
+  console.log('\n### Check the validity of the assetId (experimenter)');
 
   console.log('id: ', assetId);
 
@@ -393,7 +429,7 @@ validation.checkValidityOfSiteAssetId = function(req, res, next) {
 // add it as req.oc.asset
 validation.getAssetFromBody = function(req, res, next) {
 
-  console.log('### Get the Asset from the body');
+  console.log('\n### Get the Asset from the body');
 
   // Handle body
   if(!req.body) {
@@ -414,7 +450,7 @@ validation.getAssetFromBody = function(req, res, next) {
 };
 
 validation.checkSiteToken = function(req, res, next) {
-  console.log('### Check site token');
+  console.log('\n### Check site token');
   // OC sites are Clients, thus, we grab the client id from the Access Token
 
   var clientId = req.user.token.clientId;
@@ -449,7 +485,7 @@ validation.checkSiteToken = function(req, res, next) {
 // If valid, req.oc.sitename will contain the sitename
 validation.checkValidityOfSiteAsset = function(req, res, next) {
 
-  console.log('### Check the validity of the Asset (site)');
+  console.log('\n### Check the validity of the Asset (site)');
   var asset = req.oc.asset;
 
   // The AssetID is an attribute `id` within the asset
@@ -464,7 +500,7 @@ validation.checkValidityOfSiteAsset = function(req, res, next) {
 
 validation.checkValidityOfExperimenterAsset = function(req, res, next) {
 
-  console.log('### Check the validity of the Asset (experimenters)');
+  console.log('\n### Check the validity of the Asset (experimenters)');
 
   var asset = req.oc.asset;
 
@@ -552,16 +588,17 @@ validation.checkValidityOfExperimenterAsset = function(req, res, next) {
 };
 
 validation.addFiWareSignature = function(req, res, next) {
-  console.log('### Add FIWARE signature.');
+  console.log('\n### Add FIWARE signature.');
   req.headers['Fiware-Service'] = 'organicity';
   req.headers['Fiware-ServicePath'] = '/';
+  console.log('done');
   next();
 };
 
 // Finally, Call the configured server
 validation.callFinalServer = function(req, res, next){
 
-  console.log('### Forward message to the configured server.');
+  console.log('\n### Forward message to the configured server.');
 
   // Add x-forwarded-for header
   req.headers = httpClient.getClientIp(req, req.headers);
@@ -589,7 +626,7 @@ validation.callFinalServer = function(req, res, next){
 
 validation.decreaseExperimentQuota = function(req, res, next) {
 
-  console.log('### Decrease the Quota');
+  console.log('\n### Decrease the Quota');
 
   var optionsCall = {
     protocol: config.experiment_management_api.protocol,
@@ -606,7 +643,7 @@ validation.decreaseExperimentQuota = function(req, res, next) {
 }
 
 validation.increaseExperimentQuota = function(req, res, next) {
-  console.log('### Increase the Quota');
+  console.log('\n### Increase the Quota');
 
   var optionsCall = {
     protocol: config.experiment_management_api.protocol,
@@ -624,7 +661,7 @@ validation.increaseExperimentQuota = function(req, res, next) {
 
 validation.doesSiteHaveQuota = function (req, res, next) {
 
-  console.log('### Does site have quota?');
+  console.log('\n### Does site have quota?');
 
   var optionsCall = {
     protocol: config.platform_management_api.protocol,
@@ -651,7 +688,7 @@ validation.doesSiteHaveQuota = function (req, res, next) {
 };
 
 validation.increaseSiteQuota = function(req, res, next) {
-  console.log('### Increase Site Quota');
+  console.log('\n### Increase Site Quota');
   var optionsCall = {
     protocol: config.platform_management_api.protocol,
     host: config.platform_management_api.host,
@@ -669,7 +706,7 @@ validation.increaseSiteQuota = function(req, res, next) {
 };
 
 validation.decreaseSiteQuota = function(req, res, next) {
-  console.log('### Decrease Site Quota');
+  console.log('\n### Decrease Site Quota');
 
   var optionsCall = {
     protocol: config.platform_management_api.protocol,
@@ -688,7 +725,7 @@ validation.decreaseSiteQuota = function(req, res, next) {
 };
 
 validation.addSitePrivacy = function(req, res, next) {
-  console.log('### Add Site Privacy');
+  console.log('\n### Add Site Privacy');
 
   var addPrivacy = function (privacy) {
     req.oc.asset['access:scope'] = {
@@ -730,7 +767,7 @@ validation.addSitePrivacy = function(req, res, next) {
 };
 
 validation.sendResponse = function(req, res, next) {
-  console.log('### Send response');
+  console.log('\n### Send response');
   // Prepare the response
   res.statusCode = res.oc.statusCode;
   for (var idx in res.oc.headers) {

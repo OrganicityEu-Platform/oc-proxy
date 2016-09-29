@@ -77,7 +77,6 @@ var ChainsOfResponsibility = (function() {
         validation.getAccessToken,
         validation.isSubParticipantExperimenterOfExperiment,
         validation.doesApplicationbelongToAnExperiment,
-        validation.isExperimentRunning,
         validation.checkValidityOfExperimentAssetId, // Only on GET/PUT/DELETE
         validation.addFiWareSignature,
         validation.callFinalServer,
@@ -96,7 +95,6 @@ var ChainsOfResponsibility = (function() {
         validation.getAccessToken,
         validation.isSubParticipantExperimenterOfExperiment,
         validation.doesApplicationbelongToAnExperiment,
-        validation.isExperimentRunning,
         validation.checkValidityOfExperimentAssetId, // Only on GET/PUT/DELETE
         validation.addFiWareSignature,
         validation.callFinalServer,

@@ -170,7 +170,9 @@ validation.getAccessToken = function(req, res, next) {
 
   console.log('Get access token from cache');
   lock("oc.accessToken", function(unlock) {
+    console.log('We got the lock!');
     var done = function() {
+      console.log('Unlock');
       unlock(); // unlock
       next(); // next step in chain
     }

@@ -491,17 +491,11 @@ validation.checkSiteToken = function(req, res, next) {
 // This handler checks, if the id from the token (e.g., site) and the
 // assetid within the Asset are the same
 // If valid, req.oc.sitename will contain the sitename
-validation.checkValidityOfSiteAsset = function(req, res, next) {
-
-  console.log('\n### Check the validity of the Asset (site)');
+validation.checkValidityOfSiteAssetIdFromBody = function(req, res, next) {
   var asset = req.oc.asset;
-
   // The AssetID is an attribute `id` within the asset
   validateSiteAssetId(asset.id, req, res, function() {
     // Site is authorized to push assets with that prefix
-
-    //TODO: Futher checks
-
     next();
   });
 };

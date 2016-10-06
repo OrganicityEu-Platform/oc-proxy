@@ -11,9 +11,9 @@ var ChainsOfResponsibility = (function() {
         validation.rolehandler(['ocsite']),
         validation.checkSiteToken,
         validation.checkHeaderFiware,
-        validation.getAssetFromBody,
-        validation.checkValidityOfSiteAsset,
         validation.getAccessToken,
+        validation.getAssetFromBody,
+        validation.checkValidityOfSiteAssetIdFromBody,
         validation.doesSiteHaveQuota,
         validation.addSitePrivacy,
         validation.callFinalServer,
@@ -26,7 +26,7 @@ var ChainsOfResponsibility = (function() {
         validation.checkSiteToken,
         validation.checkHeaderFiware,
         validation.getAccessToken,
-        validation.checkValidityOfSiteAssetId,
+        validation.checkValidityOfSiteAssetIdFromParam,
         validation.callFinalServer,
         validation.increaseSiteQuota,
         validation.sendResponse
@@ -36,12 +36,23 @@ var ChainsOfResponsibility = (function() {
         validation.rolehandler(['ocsite']),
         validation.checkSiteToken,
         validation.checkHeaderFiware,
-        validation.checkValidityOfSiteAssetId,
+        validation.checkValidityOfSiteAssetIdFromParam,
         validation.callFinalServer,
         validation.sendResponse
         ],
       put : [
-        validation.default
+        validation.init,
+        validation.rolehandler(['ocsite']),
+        validation.checkSiteToken,
+        validation.checkHeaderFiware,
+        validation.getAccessToken,
+        validation.getAssetFromBody,
+        validation.checkValidityOfSiteAssetIdFromParam,
+        validation.checkForNonAllowedAttribute('id'),
+        validation.checkForNonAllowedAttribute('type'),
+        validation.addSitePrivacy,
+        validation.callFinalServer,
+        validation.sendResponse
       ]
     },
     experimenter : {

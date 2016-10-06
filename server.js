@@ -77,7 +77,7 @@ for (var p in config.public_paths) {
 
 app.post('/v2/entities', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].post);
 app.get('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].get);
-app.put('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].put);
+app.post('/v2/entities/:assetId/attrs', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].put);
 app.delete('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].delete);
 
 log.info('Starting OC proxy on port ' + port + '.');

@@ -40,7 +40,9 @@ var ChainsOfResponsibility = (function() {
         validation.callFinalServer,
         validation.sendResponse
         ],
-      put : [validation.default]
+      put : [
+        validation.default
+      ]
     },
     experimenter : {
       post : [
@@ -59,7 +61,9 @@ var ChainsOfResponsibility = (function() {
         validation.isExperimentRunning,
         validation.doesExperimentHaveQuota, // Only on POST
         validation.getAssetFromBody,
-        validation.checkValidityOfExperimenterAsset, // Only on POST
+        validation.checkValidityOfExperimenterAssetIdFromBody,
+        validation.checkValidityOfAssetType, // Only on POST
+        validation.checkForNonAllowedAttributes, // Only on POST
         validation.addFiWareSignature,
         validation.callFinalServer,
         //validation.decreaseExperimentQuota, // Only on POST
@@ -77,7 +81,7 @@ var ChainsOfResponsibility = (function() {
         validation.getAccessToken,
         validation.isSubParticipantExperimenterOfExperiment,
         validation.doesApplicationbelongToAnExperiment,
-        validation.checkValidityOfExperimentAssetId, // Only on GET/PUT/DELETE
+        validation.checkValidityOfExperimenterAssetIdFromParam, // Only on GET/PUT/DELETE
         validation.addFiWareSignature,
         validation.callFinalServer,
         //validation.increaseExperimentQuota, // Only on DELETE
@@ -95,31 +99,34 @@ var ChainsOfResponsibility = (function() {
         validation.getAccessToken,
         validation.isSubParticipantExperimenterOfExperiment,
         validation.doesApplicationbelongToAnExperiment,
-        validation.checkValidityOfExperimentAssetId, // Only on GET/PUT/DELETE
+        validation.checkValidityOfExperimenterAssetIdFromParam, // Only on GET/PUT/DELETE
         validation.addFiWareSignature,
         validation.callFinalServer,
         validation.sendResponse
       ],
       put : [
-        validation.default
-        /*
         validation.init,
-        validation.rolehandler(['experimenter']),
+        validation.rolehandler(['experimenter', 'participant']),
         validation.checkHeaderOrganicityApplication,
         validation.checkHeaderOrganicityExperiment,
         validation.checkHeaderAuthSub,
         validation.checkHeaderAccept,
+        validation.checkHeaderContentType, // Only on POST
         validation.checkHeaderFiwareAbstinence,
         validation.printHeader,
         validation.getAccessToken,
         validation.isSubParticipantExperimenterOfExperiment,
         validation.doesApplicationbelongToAnExperiment,
         validation.isExperimentRunning,
-        validation.checkValidityOfAssetId, // Only on GET/PUT/DELETE
+        validation.doesExperimentHaveQuota, // Only on POST
+        validation.checkValidityOfExperimenterAssetIdFromParam, // Only on GET/PUT/DELETE
+        validation.getAssetFromBody,
+        validation.checkForNonAllowedAttribute('id'),
+        validation.checkForNonAllowedAttribute('type'),
+        validation.checkForNonAllowedAttributes,
         validation.addFiWareSignature,
         validation.callFinalServer,
         validation.sendResponse
-        */
       ]
     }
   };

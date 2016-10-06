@@ -197,6 +197,7 @@ validation.getAccessToken = function(req, res, next) {
         httpClient.sendData(optionsCall, payload, res, function(status, responseText, headers) {
           var token = JSON.parse(responseText);
           req.oc.access_token = token.access_token;
+          console.log(req.oc.access_token);
           redis.setex("oc.accessToken", ((4*60) + 30), token.access_token, done);
         },function(status, resp) {
           done();
@@ -212,6 +213,7 @@ validation.getAccessToken = function(req, res, next) {
         console.log('Use access token from the cache. Expires in ', sec, 's');
 
         req.oc.access_token = reply.toString();
+        console.log(req.oc.access_token);
         done();
       }
     }); // get
@@ -363,7 +365,7 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
   // [5] - experiment id
   // [6] - assetid
 
-  console.log('\n### Check the validity of the assetId (experimenter)');
+  console.log('\n### Check the validity of the asset ID (experimenters)');
 
   console.log('id: ', assetId);
 
@@ -401,6 +403,7 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
       'authorization' : 'Bearer ' + req.oc.access_token
     }
   };
+
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
 
     var responseJson = JSON.parse(responseText);
@@ -414,12 +417,13 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
       res.send('The given experimenter id `' + urn_main_experimenter_id + '` within th asset id is wrong');
       return;
     }
+    console.log('AssetID valid!');
     next();
   }, errorHandler(res));
 
 }
 
-validation.checkValidityOfExperimentAssetId = function(req, res, next) {
+validation.checkValidityOfExperimenterAssetIdFromParam = function(req, res, next) {
   validateExperimenterAssetId(req.params.assetId, req, res, next);
 };
 
@@ -447,6 +451,8 @@ validation.getAssetFromBody = function(req, res, next) {
     res.send('Body is not valid JSON!');
     return;
   }
+
+  console.log('done');
   next();
 
 };
@@ -500,93 +506,120 @@ validation.checkValidityOfSiteAsset = function(req, res, next) {
   });
 };
 
-validation.checkValidityOfExperimenterAsset = function(req, res, next) {
+validation.checkValidityOfExperimenterAssetIdFromBody = function(req, res, next) {
+  var asset = req.oc.asset;
+  validateExperimenterAssetId(asset.id, req, res, function() {
+    next();
+  });
+};
+
+validation.checkForNonAllowedAttribute = function(attr) {
+  return function(req, res, next) {
+    console.log('\n### Check, if asset.' + attr + ' does not exists');
+    var asset = req.oc.asset;
+
+    if(asset[attr]) {
+      console.log('Asset attribute ' + attr + ' in payload not allowed!');
+      res.statusCode = 400;
+      res.send('Asset attribute ' + attr + ' in payload not allowed!');
+      return;
+    } else {
+      console.log('Asset attribute ' + attr + ' not included!');
+      next();
+    }
+  };
+};
+
+validation.checkForNonAllowedAttributes = function(req, res, next) {
+
+  console.log('\n### Check, if non allowed attributes are used');
+
+  var asset = req.oc.asset;
+  for (var i = 0; i < config.bad_asset_attributes.length; i++) {
+    var a = config.bad_asset_attributes[i];
+    if(asset[a]) {
+      res.statusCode = 400;
+      res.send('Asset attribute ' + bad_attribues[i] + ' in payload not allowed!');
+      return;
+    }
+  }
+
+  next();
+};
+
+validation.checkValidityOfAssetType = function(req, res, next) {
 
   console.log('\n### Check the validity of the Asset (experimenters)');
 
   var asset = req.oc.asset;
+  var item_type = asset.type;
+  var allowedPrefix = 'urn:oc:entitytype:';
 
-  validateExperimenterAssetId(asset.id, req, res, function() {
-    var item_type = asset.type;
+  // (e) Check, if the prefix of the asset is correct
+  if(!item_type.startsWith(allowedPrefix)) {
+    res.statusCode = 400;
+    res.send('asset.type prefix wrong');
+    return;
+  }
 
-    // (d) Check, if non allowed attributes are used
-    for (var i = 0; i < config.bad_asset_attributes.length; i++) {
-      var a = config.bad_asset_attributes[i];
-      if(asset[a]) {
-        res.statusCode = 400;
-        res.send('Attribute ' + bad_attribues[i] + ' not allowed!');
-        return;
+  // (f) Get the available assetTypes from the OrganiCity Platform Management API
+  var optionsCall = {
+      protocol: config.platform_management_api.protocol,
+      host: config.platform_management_api.host,
+      port: config.platform_management_api.port,
+      path: '/v1/dictionary/assettypes',
+      method: 'GET',
+      headers : {
+        'authorization' : 'Bearer ' + req.oc.access_token
+      }
+  };
+
+  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+    var assetTypes = JSON.parse(responseText);
+
+    var found = false;
+    for (var i = 0; i < assetTypes.length; i++) {
+      var a = assetTypes[i];
+      if(item_type === a.urn) {
+        console.log('   ', a.urn);
+        found = true;
       }
     }
 
-    var allowedPrefix = 'urn:oc:entitytype:';
+    if(found) {
+      console.log('Asset type found!');
+      next();
+    } else {
 
-    // (e) Check, if the prefix of the asset is correct
-    if(!item_type.startsWith(allowedPrefix)) {
-      res.statusCode = 400;
-      res.send('asset.type prefix wrong');
-      return;
-    }
+      // If the assed cannot be found, we inform the `OrganiCity Platform Management API` about it
 
-    // (f) Get the available assetTypes from the OrganiCity Platform Management API
-    var optionsCall = {
+      // Remove the prefix before posting
+      var assetName = item_type.substring(allowedPrefix.length);
+
+      console.log('Asset unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
+
+      var optionsCall = {
         protocol: config.platform_management_api.protocol,
         host: config.platform_management_api.host,
         port: config.platform_management_api.port,
-        path: '/v1/dictionary/assettypes',
-        method: 'GET',
+        path: '/v1/dictionary/unregisteredassettype',
+        method: 'POST',
         headers : {
-          'authorization' : 'Bearer ' + req.oc.access_token
+          'authorization' : 'Bearer ' + req.oc.access_token,
+          'content-type' : 'application/json'
         }
-    };
+      };
 
-    httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-      var assetTypes = JSON.parse(responseText);
+      var newAsset = {
+        name: assetName
+      };
 
-      var found = false;
-      for (var i = 0; i < assetTypes.length; i++) {
-        var a = assetTypes[i];
-        if(item_type === a.urn) {
-          console.log('   ', a.urn);
-          found = true;
-        }
-      }
-
-      if(found) {
-        console.log('   Asset type found!');
+      httpClient.sendData(optionsCall, JSON.stringify(newAsset), res, function(status, responseText, headers) {
+        // Push unregisteredassettype was successful
         next();
-      } else {
-
-        // If the assed cannot be found, we inform the `OrganiCity Platform Management API` about it
-
-        // Remove the prefix before posting
-        var assetName = item_type.substring(allowedPrefix.length);
-
-        console.log('   Asset unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
-
-        var optionsCall = {
-          protocol: config.platform_management_api.protocol,
-          host: config.platform_management_api.host,
-          port: config.platform_management_api.port,
-          path: '/v1/dictionary/unregisteredassettype',
-          method: 'POST',
-          headers : {
-            'authorization' : 'Bearer ' + req.oc.access_token,
-            'content-type' : 'application/json'
-          }
-        };
-
-        var newAsset = {
-          name: assetName
-        };
-
-        httpClient.sendData(optionsCall, JSON.stringify(newAsset), res, function(status, responseText, headers) {
-          // Push unregisteredassettype was successful
-          next();
-        });
-      }
-    }, errorHandler(res));
-  });
+      });
+    }
+  }, errorHandler(res));
 };
 
 validation.addFiWareSignature = function(req, res, next) {
@@ -628,7 +661,7 @@ validation.callFinalServer = function(req, res, next){
 
 validation.decreaseExperimentQuota = function(req, res, next) {
 
-  console.log('\n### Decrease the Quota');
+  console.log('\n### Decrease the Experiment Quota');
 
   var optionsCall = {
     protocol: config.experiment_management_api.protocol,
@@ -645,7 +678,7 @@ validation.decreaseExperimentQuota = function(req, res, next) {
 }
 
 validation.increaseExperimentQuota = function(req, res, next) {
-  console.log('\n### Increase the Quota');
+  console.log('\n### Increase the Experiment Quota');
 
   var optionsCall = {
     protocol: config.experiment_management_api.protocol,

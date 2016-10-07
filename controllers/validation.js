@@ -427,7 +427,7 @@ validation.checkValidityOfExperimenterAssetIdFromParam = function(req, res, next
   validateExperimenterAssetId(req.params.assetId, req, res, next);
 };
 
-validation.checkValidityOfSiteAssetId = function(req, res, next) {
+validation.checkValidityOfSiteAssetIdFromParam = function(req, res, next) {
   validateSiteAssetId(req.params.assetId, req, res, next);
 };
 

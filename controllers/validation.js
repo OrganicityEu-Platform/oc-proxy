@@ -351,6 +351,7 @@ validateSiteAssetId = function(assetId, req, res, next) {
     return;
   }
 
+  req.oc.assetId = assetId;
   next();
 };
 
@@ -767,7 +768,7 @@ validation.addSitePrivacy = function(req, res, next) {
   if(req.oc.sitename === 'experimenters') {
     // get /emscheck/assets-public/{expId}
     console.log('Get privacy from Luis');
-    var assetId = req.oc.asset.id;
+    var assetId = req.oc.assetId;
     var assetIdParts = assetId.split(':');
     var expId = assetIdParts[5];
 

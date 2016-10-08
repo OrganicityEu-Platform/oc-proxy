@@ -653,6 +653,33 @@ validation.callFinalServer = function(req, res, next){
   });
 };
 
+validation.callNotificationProxy = function(req, res, next) {
+
+  if(config.nofification_proxy) {
+    console.log('\n### Call Nofication Proxy');
+
+    var options = {
+      method: req.method,
+      headers: req.headers,
+      protocol: config.nofification_proxy.protocol,
+      host: config.nofification_proxy.host,
+      port: config.nofification_proxy.port,
+      path: req.url
+    };
+
+    //
+    httpClient.sendData(options, undefined, res, function(status, responseText, headers) {
+      next();
+    }, function(status, responseText, headers) {
+      next();
+    });
+
+  } else {
+    // Skip notification proxy
+    next();
+  }
+
+};
 
 validation.decreaseExperimentQuota = function(req, res, next) {
 

@@ -95,6 +95,7 @@ var ChainsOfResponsibility = (function() {
         validation.checkValidityOfExperimenterAssetIdFromParam, // Only on GET/PUT/DELETE
         validation.addFiWareSignature,
         validation.callFinalServer,
+        validation.callNotificationProxy,
         //validation.increaseExperimentQuota, // Only on DELETE
         validation.sendResponse
       ],

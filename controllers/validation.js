@@ -551,7 +551,7 @@ validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
   var asset = req.oc.asset;
   var timeInstant = asset.TimeInstant;
 
-  if(!TimeInstant) {
+  if(!timeInstant) {
       res.statusCode = 400;
       res.send('Asset attribute TimeInstant in payload not found!');
       return;

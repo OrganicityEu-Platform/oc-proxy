@@ -560,7 +560,7 @@ validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
     var type = timeInstant.type;
     if(type != typeIso8601) {
       res.statusCode = 400;
-      res.send('Asset attribute TimeInstant.type must be ' + typeIso8601 + '!');
+      res.send('Asset attribute TimeInstant.type must be ' + typeIso8601);
       return;
     }
 

@@ -21,7 +21,7 @@ var headerExists = function (headers, name, res, allowed) {
   // Header is mandatory
   if(allowed) {
     if(!headers[name]) {
-      errorHandler(res, 400, 'BadRequest', 'HTTP header ' + name.toLowerCase() + ' not provided!');
+      errorHandler(res, 400, 'BadRequest', 'HTTP header ' + name.toLowerCase() + ' not provided!')();
       return false;
     }
     return true;
@@ -30,7 +30,7 @@ var headerExists = function (headers, name, res, allowed) {
   // Header is not allowed
   else {
     if(headers[name]) {
-      errorHandler(res, 400, 'BadRequest', 'HTTP header ' + name.toLowerCase() + ' is not allowed!');
+      errorHandler(res, 400, 'BadRequest', 'HTTP header ' + name.toLowerCase() + ' is not allowed!')();
       return false;
     }
     return true;
@@ -111,7 +111,7 @@ validation.checkHeaderAccept  = function(req, res, next) {
   }
 
   if(req.headers['accept'] !== 'application/json') {
-    errorHandler(res, 406, 'BadRequest', 'HTTP header Accept ' + req.headers['accept'] + ' not acceptable. Please provide application/json');
+    errorHandler(res, 406, 'BadRequest', 'HTTP header Accept ' + req.headers['accept'] + ' not acceptable. Please provide application/json')();
     return;
   }
   next();
@@ -123,7 +123,7 @@ validation.checkHeaderContentType  = function(req, res, next) {
     return;
   }
   if(req.headers['content-type'] !== 'application/json') {
-    errorHandler(res, 406, 'BadRequest', 'HTTP header Content-Type ' + req.headers['content-type'] + ' not acceptable. Please provide application/json');
+    errorHandler(res, 406, 'BadRequest', 'HTTP header Content-Type ' + req.headers['content-type'] + ' not acceptable. Please provide application/json')();
     return;
   }
   next();
@@ -137,7 +137,7 @@ validation.checkHeaderFiware  = function(req, res, next) {
   }
 
   if(req.headers['fiware-service'] !== 'organicity') {
-    errorHandler(res, 406, 'BadRequest', 'HTTP header Fiware-Service ' + req.headers['fiware-service'] + ' not acceptable.');
+    errorHandler(res, 406, 'BadRequest', 'HTTP header Fiware-Service ' + req.headers['fiware-service'] + ' not acceptable.')();
     return;
   }
 
@@ -330,7 +330,7 @@ validation.doesExperimentHaveQuota = function(req, res, next) {
     if(quota > 0) {
       next();
     } else {
-      errorHandler(res, 400, 'BadRequest', 'The experiment reached the quota');
+      errorHandler(res, 400, 'BadRequest', 'The experiment reached the quota')();
     }
   }, errorHandler(res));
 };
@@ -349,7 +349,7 @@ validateSiteAssetId = function(assetId, req, res, next) {
 
   // Check, if the prefix of the asset is correct
   if(!assetId.startsWith(allowedPrefix)) {
-    errorHandler(res, 400, 'BadRequest', 'Asset.id prefix wrong');
+    errorHandler(res, 400, 'BadRequest', 'Asset.id prefix wrong')();
     return;
   }
 
@@ -411,11 +411,9 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
     var responseJson = JSON.parse(responseText);
     var mainExperimenter = responseJson.mainExperimenter;
 
-    console.log(urn_main_experimenter_id);
-    console.log(mainExperimenter);
-
     if(urn_main_experimenter_id !== mainExperimenter) {
-      errorHandler(res, 400, 'BadRequest', 'The given experimenter id `' + urn_main_experimenter_id + '` within th asset id is wrong');
+      console.log(urn_main_experimenter_id + ' != ', mainExperimenter);
+      errorHandler(res, 400, 'BadRequest', 'The given experimenter id `' + urn_main_experimenter_id + '` within th asset id is wrong')();
       return;
     }
     console.log('AssetID valid!');
@@ -441,14 +439,14 @@ validation.getAssetFromBody = function(req, res, next) {
 
   // Handle body
   if(!req.body) {
-    errorHandler(res, 400, 'BadRequest', 'No HTTP body provided!');
+    errorHandler(res, 400, 'BadRequest', 'No HTTP body provided!')();
     return;
   }
 
   try {
     req.oc.asset = JSON.parse(req.body.toString('utf8'));
   } catch (e) {
-    errorHandler(res, 400, 'BadRequest', 'HTTP body is not valid JSON!');
+    errorHandler(res, 400, 'BadRequest', 'HTTP body is not valid JSON!')();
     return;
   }
 
@@ -463,19 +461,19 @@ validation.checkSiteToken = function(req, res, next) {
 
   var clientId = req.user.token.clientId;
   if(!clientId) {
-    errorHandler(res, 400, 'BadRequest', 'You are not a client!');
+    errorHandler(res, 400, 'BadRequest', 'You are not a client!')();
     return;
   }
 
   var clientIdParts = clientId.split('-');
 
   if(clientIdParts.length != 2) {
-    errorHandler(res, 400, 'BadRequest', 'ClientID wrong');
+    errorHandler(res, 400, 'BadRequest', 'ClientID wrong')();
     return;
   }
 
   if(clientIdParts[0] != 'ocsite') {
-    errorHandler(res, 400, 'BadRequest', 'ClientID wrong. You`re not an OC site.');
+    errorHandler(res, 400, 'BadRequest', 'ClientID wrong. You`re not an OC site.')();
     return;
   }
 
@@ -512,7 +510,7 @@ validation.checkForNonAllowedAttribute = function(attr) {
     if(asset[attr]) {
       var msg = 'Asset attribute ' + attr + ' in payload not allowed!';
       console.log(msg);
-      errorHandler(res, 400, 'BadRequest', msg);
+      errorHandler(res, 400, 'BadRequest', msg)();
       return;
     } else {
       console.log('Asset attribute ' + attr + ' not included!');
@@ -529,7 +527,7 @@ validation.checkForNonAllowedAttributes = function(req, res, next) {
   for (var i = 0; i < config.bad_asset_attributes.length; i++) {
     var a = config.bad_asset_attributes[i];
     if(asset[a]) {
-      errorHandler(res, 400, 'BadRequest', 'Asset attribute ' + bad_attribues[i] + ' in payload not allowed!');
+      errorHandler(res, 400, 'BadRequest', 'Asset attribute ' + bad_attribues[i] + ' in payload not allowed!')();
       return;
     }
   }
@@ -546,13 +544,12 @@ validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
   var timeInstant = asset.TimeInstant;
 
   if(!timeInstant) {
-    errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant in payload not found!');
-    return;
+    errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant in payload not found!')();
   } else {
     // verify the type
     var type = timeInstant.type;
     if(type != typeIso8601) {
-      errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant.type must be ' + typeIso8601);
+      errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant.type must be ' + typeIso8601)();
       return;
     }
 
@@ -583,7 +580,7 @@ validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
     console.log(e);
 
     if(!moment(value).isValid()) {
-      errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant.value is not valid!');
+      errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant.value is not valid!')();
       return;
     }
     */
@@ -604,7 +601,7 @@ validation.checkValidityOfAssetType = function(req, res, next) {
 
   // (e) Check, if the prefix of the asset is correct
   if(!item_type.startsWith(allowedPrefix)) {
-    errorHandler(res, 400, 'BadRequest', 'asset.type prefix must be ' + allowedPrefix);
+    errorHandler(res, 400, 'BadRequest', 'asset.type prefix must be ' + allowedPrefix)();
     return;
   }
 
@@ -789,7 +786,7 @@ validation.doesSiteHaveQuota = function (req, res, next) {
     if(quota > 0) {
       next();
     } else {
-      errorHandler(res, 400, 'BadRequest', 'The site reached the quota!');
+      errorHandler(res, 400, 'BadRequest', 'The site reached the quota!')();
     }
   });
 };

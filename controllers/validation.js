@@ -542,6 +542,67 @@ validation.checkForNonAllowedAttributes = function(req, res, next) {
   next();
 };
 
+var typeIso8601 = 'urn:oc:attributeType:ISO8601';
+
+validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
+
+  console.log('\n### Check, if ISO8601 is correct');
+
+  var asset = req.oc.asset;
+  var timeInstant = asset.TimeInstant;
+
+  if(!TimeInstant) {
+      res.statusCode = 400;
+      res.send('Asset attribute TimeInstant in payload not found!');
+      return;
+  } else {
+    // verify the type
+    var type = timeInstant.type;
+    if(type != typeIso8601) {
+      res.statusCode = 400;
+      res.send('Asset attribute TimeInstant.type must be ' + typeIso8601 + '!');
+      return;
+    }
+
+    // verify the value
+    var value = timeInstant.value;
+
+    // Z at the end is UTC!
+    // Verify value, e.g., `2013-12-31T23:59:59Z`
+    /*
+    var moment = require('moment');
+
+    var pattern = "YYYY-MM-DDTHH:mm:ss";
+    var pattern2 = "YYYY-MM-DDTHH:mm:ssZ";
+
+    var a = moment("2013-12-31T23:59:59", pattern, true).isValid();
+    console.log(a);
+
+    var b = moment("2013-12-31T23:59:59Z", pattern2, true).isValid();
+    console.log(b);
+
+    var c = moment("2013-12-31T23:59:59+0100", pattern, true).isValid();
+    console.log(c);
+
+    var d = moment("2013-12-31T23:59:59+01:00", pattern, true).isValid();
+    console.log(d);
+
+    var e = moment("2013-12-31T23:59:59+ABC", pattern, true).isValid();
+    console.log(e);
+
+    if(!moment(value).isValid()) {
+      res.statusCode = 400;
+      res.send('Asset attribute TimeInstant.value is not valid!');
+      return;
+    }
+    */
+
+    next();
+  }
+
+};
+
+
 validation.checkValidityOfAssetType = function(req, res, next) {
 
   console.log('\n### Check the validity of the Asset (experimenters)');

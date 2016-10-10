@@ -14,6 +14,7 @@ var ChainsOfResponsibility = (function() {
         validation.getAccessToken,
         validation.getAssetFromBody,
         validation.checkValidityOfSiteAssetIdFromBody,
+        validation.checkValidityOfAssetTimeInstant,
         validation.doesSiteHaveQuota,
         validation.addSitePrivacy,
         validation.callFinalServer,
@@ -50,6 +51,7 @@ var ChainsOfResponsibility = (function() {
         validation.checkValidityOfSiteAssetIdFromParam,
         validation.checkForNonAllowedAttribute('id'),
         validation.checkForNonAllowedAttribute('type'),
+        validation.checkValidityOfAssetTimeInstant,
         validation.addSitePrivacy,
         validation.callFinalServer,
         validation.sendResponse
@@ -63,21 +65,22 @@ var ChainsOfResponsibility = (function() {
         validation.checkHeaderOrganicityExperiment,
         validation.checkHeaderAuthSub,
         validation.checkHeaderAccept,
-        validation.checkHeaderContentType, // Only on POST
+        validation.checkHeaderContentType,
         validation.checkHeaderFiwareAbstinence,
         validation.printHeader,
         validation.getAccessToken,
         validation.isSubParticipantExperimenterOfExperiment,
         validation.doesApplicationbelongToAnExperiment,
         validation.isExperimentRunning,
-        validation.doesExperimentHaveQuota, // Only on POST
+        validation.doesExperimentHaveQuota,
         validation.getAssetFromBody,
         validation.checkValidityOfExperimenterAssetIdFromBody,
-        validation.checkValidityOfAssetType, // Only on POST
-        validation.checkForNonAllowedAttributes, // Only on POST
+        validation.checkValidityOfAssetType,
+        validation.checkForNonAllowedAttributes,
+        validation.checkValidityOfAssetTimeInstant,
         validation.addFiWareSignature,
         validation.callFinalServer,
-        //validation.decreaseExperimentQuota, // Only on POST
+        //validation.decreaseExperimentQuota,
         validation.sendResponse
       ],
       delete : [
@@ -92,11 +95,11 @@ var ChainsOfResponsibility = (function() {
         validation.getAccessToken,
         validation.isSubParticipantExperimenterOfExperiment,
         validation.doesApplicationbelongToAnExperiment,
-        validation.checkValidityOfExperimenterAssetIdFromParam, // Only on GET/PUT/DELETE
+        validation.checkValidityOfExperimenterAssetIdFromParam,
         validation.addFiWareSignature,
         validation.callFinalServer,
         validation.callNotificationProxy,
-        //validation.increaseExperimentQuota, // Only on DELETE
+        //validation.increaseExperimentQuota,
         validation.sendResponse
       ],
       get : [
@@ -111,7 +114,7 @@ var ChainsOfResponsibility = (function() {
         validation.getAccessToken,
         validation.isSubParticipantExperimenterOfExperiment,
         validation.doesApplicationbelongToAnExperiment,
-        validation.checkValidityOfExperimenterAssetIdFromParam, // Only on GET/PUT/DELETE
+        validation.checkValidityOfExperimenterAssetIdFromParam,
         validation.addFiWareSignature,
         validation.callFinalServer,
         validation.sendResponse
@@ -123,19 +126,20 @@ var ChainsOfResponsibility = (function() {
         validation.checkHeaderOrganicityExperiment,
         validation.checkHeaderAuthSub,
         validation.checkHeaderAccept,
-        validation.checkHeaderContentType, // Only on POST
+        validation.checkHeaderContentType,
         validation.checkHeaderFiwareAbstinence,
         validation.printHeader,
         validation.getAccessToken,
         validation.isSubParticipantExperimenterOfExperiment,
         validation.doesApplicationbelongToAnExperiment,
         validation.isExperimentRunning,
-        validation.doesExperimentHaveQuota, // Only on POST
-        validation.checkValidityOfExperimenterAssetIdFromParam, // Only on GET/PUT/DELETE
+        validation.doesExperimentHaveQuota,
+        validation.checkValidityOfExperimenterAssetIdFromParam,
         validation.getAssetFromBody,
         validation.checkForNonAllowedAttribute('id'),
         validation.checkForNonAllowedAttribute('type'),
         validation.checkForNonAllowedAttributes,
+        validation.checkValidityOfAssetTimeInstant,
         validation.addFiWareSignature,
         validation.callFinalServer,
         validation.sendResponse

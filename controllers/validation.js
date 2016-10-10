@@ -605,7 +605,7 @@ validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
 
 validation.checkValidityOfAssetType = function(req, res, next) {
 
-  console.log('\n### Check the validity of the Asset (experimenters)');
+  console.log('\n### Check the validity of the Asset Type');
 
   var asset = req.oc.asset;
   var item_type = asset.type;

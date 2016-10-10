@@ -885,7 +885,8 @@ validation.addSitePrivacy = function(req, res, next) {
 };
 
 validation.fixLocationHeader = function(req, res, next) {
-  res.or.headers['Location'] = 'https://discovery.organicity.eu/v0/assets/' + req.oc.assetId;
+  console.log('\n### Fix location header');
+  res.oc.headers['Location'] = 'https://discovery.organicity.eu/v0/assets/' + req.oc.assetId;
 }
 
 validation.sendResponse = function(req, res, next) {

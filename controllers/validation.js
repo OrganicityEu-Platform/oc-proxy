@@ -21,8 +21,7 @@ var headerExists = function (headers, name, res, allowed) {
   // Header is mandatory
   if(allowed) {
     if(!headers[name]) {
-      res.statusCode = 400;
-      res.send('HTTP header ' + name.toLowerCase() + ' not provided!');
+      errorHandler(res, 400, 'BadRequest', 'HTTP header ' + name.toLowerCase() + ' not provided!');
       return false;
     }
     return true;
@@ -31,19 +30,28 @@ var headerExists = function (headers, name, res, allowed) {
   // Header is not allowed
   else {
     if(headers[name]) {
-      res.statusCode = 400;
-      res.send('HTTP header ' + name.toLowerCase() + ' is not allowed!');
+      errorHandler(res, 400, 'BadRequest', 'HTTP header ' + name.toLowerCase() + ' is not allowed!');
       return false;
     }
     return true;
   }
 };
 
-var errorHandler = function(res, code, msg) {
+var createError = function (error, description) {
+  var o = {
+    "error": error,
+    "description": description
+  };
+  return JSON.stringify(o);
+}
+
+var errorHandler = function(res, code, type, msg) {
   return function(status, resp) {
-      log.error('HTTP error. Status: ', status, 'Response: ', resp);
-      res.statusCode = code || 500;
-      res.send(msg || 'An internal server error happended!');
+    log.error('Internal error message. Status: ', status, 'Response: ', resp);
+    log.error('External error message. Status: ', code, 'Type: ', type, 'Message: ', msg);
+    res.statusCode = code || 500;
+    res.setHeader('Content-Type', 'application/json');
+    res.send(createError(type || 'InternalServerError', msg || 'An Internal Server Error happended!'));
   }
 };
 
@@ -53,20 +61,20 @@ validation.init = function(req, res, next) {
 };
 
 validation.rolehandler = function (roles) {
-	return function(req, res, next) {
-		for(var i = 0; i < roles.length; i++) {
-			var role = roles[i];
-			console.log('\n### Check role: ', role);
-			if(indexOf(req.user.token.realm_access.roles, role) >= 0) {
-				req.headers['x-auth-subject'] = req.user.token.sub;
+  return function(req, res, next) {
+    for(var i = 0; i < roles.length; i++) {
+      var role = roles[i];
+      console.log('\n### Check role: ', role);
+      if(indexOf(req.user.token.realm_access.roles, role) >= 0) {
+        req.headers['x-auth-subject'] = req.user.token.sub;
         console.log('found');
-				next();
-				return;
-			}
-		}
+        next();
+        return;
+      }
+    }
     console.log('not found');
-		res.status(403).send('You dont have to role to access this endpoint!');
-	}
+    res.status(403).send('You dont have to role to access this endpoint!');
+  }
 };
 
 validation.checkHeaderOrganicityApplication = function(req, res, next) {
@@ -103,8 +111,8 @@ validation.checkHeaderAccept  = function(req, res, next) {
   }
 
   if(req.headers['accept'] !== 'application/json') {
-    res.statusCode = 406;
-    res.send('HTTP header Accept ' + req.headers['accept'] + ' not acceptable. Please provide application/json');
+    errorHandler(res, 406, 'BadRequest', 'HTTP header Accept ' + req.headers['accept'] + ' not acceptable. Please provide application/json');
+    return;
   }
   next();
 };
@@ -115,8 +123,7 @@ validation.checkHeaderContentType  = function(req, res, next) {
     return;
   }
   if(req.headers['content-type'] !== 'application/json') {
-    res.statusCode = 406;
-    res.send('HTTP header Content-Type ' + req.headers['content-type'] + ' not acceptable. Please provide application/json');
+    errorHandler(res, 406, 'BadRequest', 'HTTP header Content-Type ' + req.headers['content-type'] + ' not acceptable. Please provide application/json');
     return;
   }
   next();
@@ -130,8 +137,7 @@ validation.checkHeaderFiware  = function(req, res, next) {
   }
 
   if(req.headers['fiware-service'] !== 'organicity') {
-    res.statusCode = 406;
-    res.send('HTTP header Fiware-Service ' + req.headers['fiware-service'] + ' not acceptable.');
+    errorHandler(res, 406, 'BadRequest', 'HTTP header Fiware-Service ' + req.headers['fiware-service'] + ' not acceptable.');
     return;
   }
 
@@ -200,10 +206,8 @@ validation.getAccessToken = function(req, res, next) {
           console.log(req.oc.access_token);
           redis.setex("oc.accessToken", ((4*60) + 30), token.access_token, done);
         },function(status, resp) {
-          done();
-          log.error("Error: ", status, resp);
-          res.statusCode = status;
-          res.send(resp);
+          unlock();
+          errorHandler(res)();
         });
 
       } else {
@@ -217,7 +221,7 @@ validation.getAccessToken = function(req, res, next) {
         done();
       }
     }); // get
-	}); // lock
+  }); // lock
 };
 
 // This checks, if the sub is a participant/experimenter of the experiment
@@ -259,7 +263,7 @@ validation.isSubParticipantExperimenterOfExperiment = function(req, res, next) {
     httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
       // This will be called, if the sub is a participant of the experiment
       next();
-    }, errorHandler(res, 400, 'You`re not part of the experiment'));
+    }, errorHandler(res, 400, 'BadRequest', 'You`re not part of the experiment'));
   });
 };
 
@@ -281,7 +285,7 @@ validation.doesApplicationbelongToAnExperiment = function(req, res, next) {
 
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
     next();
-  }, errorHandler(res, 400, 'This application does not belong to the experiment'));
+  }, errorHandler(res, 400, 'BadRequest', 'This application does not belong to the experiment'));
 };
 
 validation.isExperimentRunning = function(req, res, next) {
@@ -300,7 +304,7 @@ validation.isExperimentRunning = function(req, res, next) {
 
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
     next();
-  }, errorHandler(res, 400, 'This experiment is not running!'));
+  }, errorHandler(res, 400, 'BadRequest', 'This experiment is not running!'));
 };
 
 // Does the experiment have quota
@@ -326,8 +330,7 @@ validation.doesExperimentHaveQuota = function(req, res, next) {
     if(quota > 0) {
       next();
     } else {
-      res.statusCode = 400;
-      res.send('The experiment reached the quota!');
+      errorHandler(res, 400, 'BadRequest', 'The experiment reached the quota');
     }
   }, errorHandler(res));
 };
@@ -346,8 +349,7 @@ validateSiteAssetId = function(assetId, req, res, next) {
 
   // Check, if the prefix of the asset is correct
   if(!assetId.startsWith(allowedPrefix)) {
-    res.statusCode = 400;
-    res.send('asset.id prefix wrong');
+    errorHandler(res, 400, 'BadRequest', 'Asset.id prefix wrong');
     return;
   }
 
@@ -369,10 +371,10 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
   console.log('\n### Check the validity of the asset ID (experimenters)');
 
   console.log('id: ', assetId);
+  var assetIdPrefix = 'urn:oc:entity:experimenters:';
 
-  if(!assetId.startsWith('urn:oc:entity:experimenters:')) {
-    res.statusCode = 400;
-    res.send('asset.id prefix wrong');
+  if(!assetId.startsWith(assetIdPrefix)) {
+    errorHandler(res, 400, 'BadRequest', 'Asset.id prefix wrong. Must be ' + assetIdPrefix);
     return;
   }
 
@@ -388,9 +390,8 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
 
   // (b) Check for the correct experiment id
   if(urn_experiment_id !== req.oc.expid){
-      res.statusCode = 400;
-      res.send('The given experiment id `' + urn_experiment_id + '` within th asset id is wrong');
-      return;
+    errorHandler(res, 400, 'BadRequest', 'The given experiment id `' + urn_experiment_id + '` within th asset id is wrong');
+    return;
   }
 
   // (c) Check, if the main experimenter id within the URN of the asset equals the main experimenter id
@@ -414,8 +415,7 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
     console.log(mainExperimenter);
 
     if(urn_main_experimenter_id !== mainExperimenter) {
-      res.statusCode = 400;
-      res.send('The given experimenter id `' + urn_main_experimenter_id + '` within th asset id is wrong');
+      errorHandler(res, 400, 'BadRequest', 'The given experimenter id `' + urn_main_experimenter_id + '` within th asset id is wrong');
       return;
     }
     console.log('AssetID valid!');
@@ -441,16 +441,14 @@ validation.getAssetFromBody = function(req, res, next) {
 
   // Handle body
   if(!req.body) {
-    res.statusCode = 400;
-    res.send('No body provided!');
+    errorHandler(res, 400, 'BadRequest', 'No HTTP body provided!');
     return;
   }
 
   try {
     req.oc.asset = JSON.parse(req.body.toString('utf8'));
   } catch (e) {
-    res.statusCode = 400;
-    res.send('Body is not valid JSON!');
+    errorHandler(res, 400, 'BadRequest', 'HTTP body is not valid JSON!');
     return;
   }
 
@@ -465,22 +463,19 @@ validation.checkSiteToken = function(req, res, next) {
 
   var clientId = req.user.token.clientId;
   if(!clientId) {
-    res.statusCode = 400;
-    res.send('You are not a client!');
+    errorHandler(res, 400, 'BadRequest', 'You are not a client!');
     return;
   }
 
   var clientIdParts = clientId.split('-');
 
   if(clientIdParts.length != 2) {
-    res.statusCode = 400;
-    res.send('ClientID wrong');
+    errorHandler(res, 400, 'BadRequest', 'ClientID wrong');
     return;
   }
 
   if(clientIdParts[0] != 'ocsite') {
-    res.statusCode = 400;
-    res.send('ClientID wrong. You`re not an OC site.');
+    errorHandler(res, 400, 'BadRequest', 'ClientID wrong. You`re not an OC site.');
     return;
   }
 
@@ -515,9 +510,9 @@ validation.checkForNonAllowedAttribute = function(attr) {
     var asset = req.oc.asset;
 
     if(asset[attr]) {
-      console.log('Asset attribute ' + attr + ' in payload not allowed!');
-      res.statusCode = 400;
-      res.send('Asset attribute ' + attr + ' in payload not allowed!');
+      var msg = 'Asset attribute ' + attr + ' in payload not allowed!';
+      console.log(msg);
+      errorHandler(res, 400, 'BadRequest', msg);
       return;
     } else {
       console.log('Asset attribute ' + attr + ' not included!');
@@ -534,12 +529,10 @@ validation.checkForNonAllowedAttributes = function(req, res, next) {
   for (var i = 0; i < config.bad_asset_attributes.length; i++) {
     var a = config.bad_asset_attributes[i];
     if(asset[a]) {
-      res.statusCode = 400;
-      res.send('Asset attribute ' + bad_attribues[i] + ' in payload not allowed!');
+      errorHandler(res, 400, 'BadRequest', 'Asset attribute ' + bad_attribues[i] + ' in payload not allowed!');
       return;
     }
   }
-
   next();
 };
 
@@ -553,15 +546,13 @@ validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
   var timeInstant = asset.TimeInstant;
 
   if(!timeInstant) {
-      res.statusCode = 400;
-      res.send('Asset attribute TimeInstant in payload not found!');
-      return;
+    errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant in payload not found!');
+    return;
   } else {
     // verify the type
     var type = timeInstant.type;
     if(type != typeIso8601) {
-      res.statusCode = 400;
-      res.send('Asset attribute TimeInstant.type must be ' + typeIso8601);
+      errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant.type must be ' + typeIso8601);
       return;
     }
 
@@ -592,8 +583,7 @@ validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
     console.log(e);
 
     if(!moment(value).isValid()) {
-      res.statusCode = 400;
-      res.send('Asset attribute TimeInstant.value is not valid!');
+      errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant.value is not valid!');
       return;
     }
     */
@@ -614,8 +604,7 @@ validation.checkValidityOfAssetType = function(req, res, next) {
 
   // (e) Check, if the prefix of the asset is correct
   if(!item_type.startsWith(allowedPrefix)) {
-    res.statusCode = 400;
-    res.send('asset.type prefix must be ' + allowedPrefix);
+    errorHandler(res, 400, 'BadRequest', 'asset.type prefix must be ' + allowedPrefix);
     return;
   }
 
@@ -800,8 +789,7 @@ validation.doesSiteHaveQuota = function (req, res, next) {
     if(quota > 0) {
       next();
     } else {
-      res.statusCode = 400;
-      res.send('The site reached the quota!');
+      errorHandler(res, 400, 'BadRequest', 'The site reached the quota!');
     }
   });
 };
@@ -903,8 +891,7 @@ validation.sendResponse = function(req, res, next) {
 };
 
 validation.default = function(req, res, next) {
-  res.statusCode = 500;
-  res.send('Internal Pipline error');
+  errorHandler(res, 500, 'InternalServerError', 'Pipline error');
 };
 
 module.exports = validation;

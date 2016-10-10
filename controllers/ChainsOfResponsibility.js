@@ -81,6 +81,7 @@ var ChainsOfResponsibility = (function() {
         validation.addFiWareSignature,
         validation.callFinalServer,
         //validation.decreaseExperimentQuota,
+        validation.fixLocationHeader,
         validation.sendResponse
       ],
       delete : [

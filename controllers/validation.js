@@ -652,7 +652,7 @@ validation.checkValidityOfAssetType = function(req, res, next) {
       // Remove the prefix before posting
       var assetName = item_type.substring(allowedPrefix.length);
 
-      console.log('Asset unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
+      console.log('Asset type unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
 
       var optionsCall = {
         protocol: config.platform_management_api.protocol,
@@ -883,6 +883,10 @@ validation.addSitePrivacy = function(req, res, next) {
     addPrivacy('public');
   }
 };
+
+validation.fixLocationHeader = function(req, res, next) {
+  res.or.headers['Location'] = 'https://discovery.organicity.eu/v0/assets/' + req.oc.assetId;
+}
 
 validation.sendResponse = function(req, res, next) {
   console.log('\n### Send response');

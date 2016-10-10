@@ -80,7 +80,7 @@ var ChainsOfResponsibility = (function() {
         validation.checkValidityOfAssetTimeInstant,
         validation.addFiWareSignature,
         validation.callFinalServer,
-        //validation.decreaseExperimentQuota,
+        validation.decreaseExperimentQuota,
         validation.fixLocationHeader,
         validation.sendResponse
       ],
@@ -100,7 +100,7 @@ var ChainsOfResponsibility = (function() {
         validation.addFiWareSignature,
         validation.callFinalServer,
         validation.callNotificationProxy,
-        //validation.increaseExperimentQuota,
+        validation.increaseExperimentQuota,
         validation.sendResponse
       ],
       get : [

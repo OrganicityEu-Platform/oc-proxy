@@ -47,8 +47,8 @@ var createError = function (error, description) {
 
 var errorHandler = function(res, code, type, msg) {
   return function(status, resp) {
-    log.error('Internal error message. Status: ', status, 'Response: ', resp);
-    log.error('External error message. Status: ', code, 'Type: ', type, 'Message: ', msg);
+    console.log('Internal error message. Status: ', status, 'Response: ', resp);
+    console.log('External error message. Status: ', code, 'Type: ', type, 'Message: ', msg);
     res.statusCode = code || 500;
     res.setHeader('Content-Type', 'application/json');
     res.send(createError(type || 'InternalServerError', msg || 'An Internal Server Error happended!'));
@@ -170,6 +170,9 @@ validation.printHeader  = function(req, res, next) {
   next();
 }
 
+//var timeAccessToken = ((4*60) + 30);
+var timeAccessToken = ((3*60) + 30);
+
 validation.getAccessToken = function(req, res, next) {
 
   console.log('\n### Get access token');
@@ -204,7 +207,7 @@ validation.getAccessToken = function(req, res, next) {
           var token = JSON.parse(responseText);
           req.oc.access_token = token.access_token;
           console.log(req.oc.access_token);
-          redis.setex("oc.accessToken", ((4*60) + 30), token.access_token, done);
+          redis.setex("oc.accessToken", timeAccessToken, token.access_token, done);
         },function(status, resp) {
           unlock();
           errorHandler(res)(status, resp);
@@ -744,7 +747,10 @@ validation.decreaseExperimentQuota = function(req, res, next) {
     }
   };
 
-  httpClient.sendData(optionsCall, undefined, res, next, errorHandler(res));
+  httpClient.sendData(optionsCall, undefined, res, function() {
+    console.log('DECREASE OKAY!');
+    next();
+  }, errorHandler(res));
 }
 
 validation.increaseExperimentQuota = function(req, res, next) {
@@ -761,7 +767,9 @@ validation.increaseExperimentQuota = function(req, res, next) {
     }
   };
 
-  httpClient.sendData(optionsCall, undefined, res, next, errorHandler(res));
+  httpClient.sendData(optionsCall, undefined, res, function() {
+    next();
+  }, errorHandler(res));
 };
 
 validation.doesSiteHaveQuota = function (req, res, next) {
@@ -804,7 +812,7 @@ validation.increaseSiteQuota = function(req, res, next) {
     }
   };
 
-  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+  httpClient.sendData(optionsCall, undefined, res, function() {
     next();
   });
 };
@@ -823,7 +831,7 @@ validation.decreaseSiteQuota = function(req, res, next) {
     }
   };
 
-  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+  httpClient.sendData(optionsCall, undefined, res, function() {
     next();
   });
 };

@@ -263,7 +263,7 @@ validation.isSubParticipantExperimenterOfExperiment = function(req, res, next) {
     httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
       // This will be called, if the sub is a participant of the experiment
       next();
-    }, errorHandler(res, 400, 'BadRequest', 'You`re not part of the experiment'));
+    }, errorHandler(res, 400, 'BadRequest', 'You`re not part of the experiment given in the HTTP header.'));
   });
 };
 
@@ -285,7 +285,7 @@ validation.doesApplicationbelongToAnExperiment = function(req, res, next) {
 
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
     next();
-  }, errorHandler(res, 400, 'BadRequest', 'This application does not belong to the experiment'));
+  }, errorHandler(res, 400, 'BadRequest', 'Application given in the HTTP header does not belong to the experiment'));
 };
 
 validation.isExperimentRunning = function(req, res, next) {
@@ -390,7 +390,7 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
 
   // (b) Check for the correct experiment id
   if(urn_experiment_id !== req.oc.expid){
-    errorHandler(res, 400, 'BadRequest', 'The given experiment id `' + urn_experiment_id + '` within th asset id is wrong');
+    errorHandler(res, 400, 'BadRequest', 'The given experiment id `' + urn_experiment_id + '` within th asset id does not fit the experiment ID in the HTTP header');
     return;
   }
 

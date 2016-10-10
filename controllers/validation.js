@@ -614,7 +614,7 @@ validation.checkValidityOfAssetType = function(req, res, next) {
   // (e) Check, if the prefix of the asset is correct
   if(!item_type.startsWith(allowedPrefix)) {
     res.statusCode = 400;
-    res.send('asset.type prefix wrong');
+    res.send('asset.type prefix must be ' + allowedPrefix);
     return;
   }
 

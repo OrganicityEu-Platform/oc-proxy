@@ -207,7 +207,7 @@ validation.getAccessToken = function(req, res, next) {
           redis.setex("oc.accessToken", ((4*60) + 30), token.access_token, done);
         },function(status, resp) {
           unlock();
-          errorHandler(res)();
+          errorHandler(res)(status, resp);
         });
 
       } else {
@@ -374,7 +374,7 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
   var assetIdPrefix = 'urn:oc:entity:experimenters:';
 
   if(!assetId.startsWith(assetIdPrefix)) {
-    errorHandler(res, 400, 'BadRequest', 'Asset.id prefix wrong. Must be ' + assetIdPrefix);
+    errorHandler(res, 400, 'BadRequest', 'Asset.id prefix wrong. Must be ' + assetIdPrefix)();
     return;
   }
 
@@ -390,7 +390,7 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
 
   // (b) Check for the correct experiment id
   if(urn_experiment_id !== req.oc.expid){
-    errorHandler(res, 400, 'BadRequest', 'The given experiment id `' + urn_experiment_id + '` within th asset id does not fit the experiment ID in the HTTP header');
+    errorHandler(res, 400, 'BadRequest', 'The given experiment id `' + urn_experiment_id + '` within th asset id does not fit the experiment ID in the HTTP header')();
     return;
   }
 
@@ -888,7 +888,7 @@ validation.sendResponse = function(req, res, next) {
 };
 
 validation.default = function(req, res, next) {
-  errorHandler(res, 500, 'InternalServerError', 'Pipline error');
+  errorHandler(res, 500, 'InternalServerError', 'Pipline error')();
 };
 
 module.exports = validation;

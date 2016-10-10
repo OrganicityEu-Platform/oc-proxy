@@ -527,7 +527,7 @@ validation.checkForNonAllowedAttributes = function(req, res, next) {
   for (var i = 0; i < config.bad_asset_attributes.length; i++) {
     var a = config.bad_asset_attributes[i];
     if(asset[a]) {
-      errorHandler(res, 400, 'BadRequest', 'Asset attribute ' + bad_attribues[i] + ' in payload not allowed!')();
+      errorHandler(res, 400, 'BadRequest', 'Asset attribute ' + a + ' in payload not allowed!')();
       return;
     }
   }

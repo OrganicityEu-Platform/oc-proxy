@@ -419,6 +419,7 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
       return;
     }
     console.log('AssetID valid!');
+    req.oc.assetId = assetId;
     next();
   }, errorHandler(res));
 

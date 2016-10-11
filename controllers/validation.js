@@ -71,6 +71,9 @@ validation.init = function(req, res, next) {
 
 // Based on http://stackoverflow.com/a/30200362/605890
 validation.bearer = function(req, res, next) {
+
+  console.log('\n### JWT Bearer');
+
   passport.authenticate('jwt-bearer', { session: false }, function(err, token, info) {
     if (err) {
       // will generate a 500 error
@@ -91,11 +94,12 @@ validation.bearer = function(req, res, next) {
           }
         }
       }
+      console.log('Unauthorized', msg);
       res.status(401).send(createError('Unauthorized', msg));
       return;
     }
 
-    //
+    console.log('Token valid');
     req.token = token;
     next();
   })(req, res, next);
@@ -103,9 +107,12 @@ validation.bearer = function(req, res, next) {
 
 validation.rolehandler = function (roles) {
   return function(req, res, next) {
+
+    console.log('\n### Check roles');
+
     for(var i = 0; i < roles.length; i++) {
       var role = roles[i];
-      console.log('\n### Check role: ', role);
+      console.log('Check role: ', role);
       if(indexOf(req.token.realm_access.roles, role) >= 0) {
         req.headers['x-auth-subject'] = req.token.sub;
         console.log('found');

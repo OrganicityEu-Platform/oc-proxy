@@ -11,7 +11,16 @@ var jwt = require('jsonwebtoken');
 var fs = require('fs');
 var cert = fs.readFileSync('cert.pem');
 
+// Shims
 require('string.prototype.startswith');
+var indexOf = require('indexof-shim');
+
+// Passport
+var passport = require('passport');
+var JwtBearerStrategy = require('passport-http-jwt-bearer').Strategy;
+passport.use(new JwtBearerStrategy(cert, function(token, done) {
+  done(null, token, undefined);
+}));
 
 var validation = {};
 
@@ -60,13 +69,45 @@ validation.init = function(req, res, next) {
   next();
 };
 
+// Based on http://stackoverflow.com/a/30200362/605890
+validation.bearer = function(req, res, next) {
+  passport.authenticate('jwt-bearer', { session: false }, function(err, token, info) {
+    if (err) {
+      // will generate a 500 error
+      return next(err);
+    }
+
+    if(!token) {
+      var msg = 'Unknown error';
+      // The info format is a bit weired. Thus, we must pars it to be able to provide the message, why the login fails
+      // @See:
+      // https://github.com/jaredhanson/passport-http-bearer/blob/43cd6a065836d02a6337539300b23ca89253cfa5/lib/strategy.js#L141
+      if(info) {
+        var infoParts = info.split(', ');
+        for(var i = 0; i < infoParts.length; i++) {
+          var p = infoParts[i].split('=');
+          if(p[0] === 'error_description') {
+            msg = p[1].slice(1, -1);
+          }
+        }
+      }
+      res.status(401).send(createError('Unauthorized', msg));
+      return;
+    }
+
+    //
+    req.token = token;
+    next();
+  })(req, res, next);
+};
+
 validation.rolehandler = function (roles) {
   return function(req, res, next) {
     for(var i = 0; i < roles.length; i++) {
       var role = roles[i];
       console.log('\n### Check role: ', role);
-      if(indexOf(req.user.token.realm_access.roles, role) >= 0) {
-        req.headers['x-auth-subject'] = req.user.token.sub;
+      if(indexOf(req.token.realm_access.roles, role) >= 0) {
+        req.headers['x-auth-subject'] = req.token.sub;
         console.log('found');
         next();
         return;
@@ -462,7 +503,7 @@ validation.checkSiteToken = function(req, res, next) {
   console.log('\n### Check site token');
   // OC sites are Clients, thus, we grab the client id from the Access Token
 
-  var clientId = req.user.token.clientId;
+  var clientId = req.token.clientId;
   if(!clientId) {
     errorHandler(res, 400, 'BadRequest', 'You are not a client!')();
     return;

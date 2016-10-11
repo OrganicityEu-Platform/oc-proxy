@@ -8,6 +8,7 @@ var ChainsOfResponsibility = (function() {
     central : {
       post : [
         validation.init,
+        validation.bearer,
         validation.rolehandler(['ocsite']),
         validation.checkSiteToken,
         validation.checkHeaderFiware,
@@ -23,6 +24,7 @@ var ChainsOfResponsibility = (function() {
       ],
       delete : [
         validation.init,
+        validation.bearer,
         validation.rolehandler(['ocsite']),
         validation.checkSiteToken,
         validation.checkHeaderFiware,
@@ -34,6 +36,7 @@ var ChainsOfResponsibility = (function() {
       ],
       get : [
         validation.init,
+        validation.bearer,
         validation.rolehandler(['ocsite']),
         validation.checkSiteToken,
         validation.checkHeaderFiware,
@@ -43,6 +46,7 @@ var ChainsOfResponsibility = (function() {
         ],
       put : [
         validation.init,
+        validation.bearer,
         validation.rolehandler(['ocsite']),
         validation.checkSiteToken,
         validation.checkHeaderFiware,
@@ -60,6 +64,7 @@ var ChainsOfResponsibility = (function() {
     experimenter : {
       post : [
         validation.init,
+        validation.bearer,
         validation.rolehandler(['experimenter', 'participant']),
         validation.checkHeaderOrganicityApplication,
         validation.checkHeaderOrganicityExperiment,
@@ -86,6 +91,7 @@ var ChainsOfResponsibility = (function() {
       ],
       delete : [
         validation.init,
+        validation.bearer,
         validation.rolehandler(['experimenter']),
         validation.checkHeaderOrganicityApplication,
         validation.checkHeaderOrganicityExperiment,
@@ -105,6 +111,7 @@ var ChainsOfResponsibility = (function() {
       ],
       get : [
         validation.init,
+        validation.bearer,
         validation.rolehandler(['experimenter']),
         validation.checkHeaderOrganicityApplication,
         validation.checkHeaderOrganicityExperiment,
@@ -122,6 +129,7 @@ var ChainsOfResponsibility = (function() {
       ],
       put : [
         validation.init,
+        validation.bearer,
         validation.rolehandler(['experimenter', 'participant']),
         validation.checkHeaderOrganicityApplication,
         validation.checkHeaderOrganicityExperiment,

@@ -4,19 +4,6 @@ var config = require('./config'),
     ChainsOfResponsibility = require('./controllers/ChainsOfResponsibility'),
     errorhandler = require('errorhandler');
 
-var passport = require('passport');
-var JwtBearerStrategy = require('passport-http-jwt-bearer').Strategy;
-var indexOf = require('indexof-shim');
-
-var cert = fs.readFileSync('cert.pem');
-
-passport.use(new JwtBearerStrategy(
-   cert,
-   function(token, done) {
-     done(null, {token: token}, token);
-   }
- ));
-
 config.https = config.https || {};
 
 var log = require('./lib/logger').logger.getLogger("Server");
@@ -75,10 +62,10 @@ for (var p in config.public_paths) {
     app.all(config.public_paths[p], Root.public);
 }
 
-app.post('/v2/entities', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].post);
-app.get('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].get);
-app.post('/v2/entities/:assetId/attrs', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].put);
-app.delete('/v2/entities/:assetId', passport.authenticate('jwt-bearer', { session: false }), ChainsOfResponsibility[config.chain].delete);
+app.post('/v2/entities', ChainsOfResponsibility[config.chain].post);
+app.get('/v2/entities/:assetId', ChainsOfResponsibility[config.chain].get);
+app.post('/v2/entities/:assetId/attrs', ChainsOfResponsibility[config.chain].put);
+app.delete('/v2/entities/:assetId', ChainsOfResponsibility[config.chain].delete);
 
 log.info('Starting OC proxy on port ' + port + '.');
 
@@ -91,6 +78,6 @@ if (config.https.enabled === true) {
     https.createServer(options, function(req,res) {
         app.handle(req, res);
     }).listen(app.get('port'));
-} else {
+  } else {
     app.listen(app.get('port'));
 }

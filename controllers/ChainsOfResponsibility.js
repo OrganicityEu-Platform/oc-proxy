@@ -8,6 +8,7 @@ var ChainsOfResponsibility = (function() {
     central : {
       post : [
         validation.init,
+        validation.logCreate,
         validation.bearer,
         validation.rolehandler(['ocsite']),
         validation.checkSiteToken,
@@ -46,6 +47,7 @@ var ChainsOfResponsibility = (function() {
         ],
       put : [
         validation.init,
+        validation.logUpdate,
         validation.bearer,
         validation.rolehandler(['ocsite']),
         validation.checkSiteToken,

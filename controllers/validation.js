@@ -947,12 +947,12 @@ validation.default = function(req, res, next) {
   errorHandler(res, 500, 'InternalServerError', 'Pipline error')();
 };
 
-validation.logPut = function(req, res, next) {
-	console.log('### UPDATE ASSET');
+validation.logUpdate = function(req, res, next) {
+  console.log('### UPDATE ASSET');
   next();
 };
 
-validation.logPost = function(req, res, next) {
+validation.logCreate = function(req, res, next) {
   console.log('### CREATE ASSET');
   next();
 };

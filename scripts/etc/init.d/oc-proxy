@@ -2,7 +2,7 @@
 #
 # Organicity Proxy startup script  
 #
-# chkconfig: - 5 99 01
+# chkconfig: 345 99 01
 # description: Organicity Proxy startup script
 
 export NAME=oc-proxy

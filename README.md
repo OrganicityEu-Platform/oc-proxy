@@ -52,7 +52,16 @@ sudo update-rc.d -f oc-proxy remove
 
 ### Cent OS
 
+Enable/Disbale
+
 ```
 chkconfig oc-proxy on
+chkconfig oc-proxy off
+```
+
+Verify:
+
+```
+chkconfig --list oc-proxy
 ```
 

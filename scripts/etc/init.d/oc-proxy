@@ -19,23 +19,22 @@ get_pid()
 {
     if [ -f $PROCESSES_DIR/$PID_FILE ]
     then
-      # $PROCESSES_DIR/$PID_FILE exists
-      PID=`cat $PROCESSES_DIR/$PID_FILE`
+      read PID < $PROCESSES_DIR/$PID_FILE
       if ps -p $PID > /dev/null
       then
         # RUNNING
-        return $PID
+        echo "$PID"
+        return
       else
         # NOT RUNNING
         rm $PROCESSES_DIR/$PID_FILE
       fi
     fi
-    return 0
+    echo "0"
 }
 
 # Get the PID.
-get_pid
-PID=$?
+PID=$(get_pid)
 
 case "$1" in
   start)

@@ -17,12 +17,13 @@ Copy script:
 cp scripts/etc/init.d/oc-proxy /etc/init.d/
 ```
 
-## Run
+## Run manually
 
 ```
 /etc/init.d/oc-proxy start
 /etc/init.d/oc-proxy stop
 /etc/init.d/oc-proxy restart
+
 /etc/init.d/oc-proxy status
 ```
 
@@ -51,5 +52,7 @@ sudo update-rc.d -f oc-proxy remove
 
 ### Cent OS
 
-TODO
+```
+chkconfig oc-proxy on
+```
 

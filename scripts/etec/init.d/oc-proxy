@@ -1,0 +1,90 @@
+#!/bin/sh
+
+export NAME=oc-proxy
+export SOURCE_DIR=/opt/oc-proxy
+export SCRIPT=server.js
+export LOG_DIR=/var/log/organicity
+export PROCESSES=/opt/processes
+export PID_FILE=oc-proxy.pid
+
+# Create folder for processes
+mkdir -p $PROCESSES
+
+# Change to source dir, since forever -sourceDir fails
+# See https://github.com/foreverjs/forever/issues/676
+cd $SOURCE_DIR
+
+get_pid()
+{
+    if [ -f $PROCESSES/$PID_FILE ]
+    then
+      # $PROCESSES/$PID_FILE exists
+      PID=`cat $PROCESSES/$PID_FILE`
+      if ps -p $PID > /dev/null
+      then
+        # RUNNING
+        return $PID
+      else
+        # NOT RUNNING
+        rm $PROCESSES/$PID_FILE
+      fi
+    fi
+    return 0
+}
+
+# Get the PID.
+get_pid
+PID=$?
+
+case "$1" in
+  start)
+    case "$PID" in
+      0)
+        echo "START oc-proxy"
+        forever start --pidFile $PROCESSES/$PID_FILE -a -o $LOG_DIR/$NAME.out -e $LOG_DIR/$NAME.err -l $LOG_DIR/$NAME$ $SCRIPT
+      ;;
+      *)
+        echo "$NAME is running already (PID $PID)"
+      ;;
+    esac
+  ;;
+  stop)
+    case "$PID" in
+      0)
+        echo "$NAME is not running"
+      ;;
+      *)
+        echo "STOP OC proxy (PID $PID)"
+        forever stop --pidFile $PROCESSES/$PID_FILE $SCRIPT
+      ;;
+    esac
+  ;;
+  restart)
+   case "$PID" in
+      0)
+        echo "$NAME is not running"
+      ;;
+      *)
+        echo "RESTART OC proxy (PID $PID)"
+        forever restart --pidFile $PROCESSES/$PID_FILE $SCRIPT
+      ;;
+    esac
+  ;;
+  status)
+    case "$PID" in
+      0)
+        echo "$NAME is not running"
+      ;;
+      *)
+        echo "$NAME is running (PID $PID)"
+      ;;
+    esac
+  ;;
+  *)
+    echo "Usage: /etc/init.d/oc-proxy {start|stop|restart|status}"
+    exit 1
+  ;;
+esac
+
+exit 0
+

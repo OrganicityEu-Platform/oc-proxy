@@ -1,4 +1,9 @@
 #!/bin/sh
+#
+# Organicity Proxy startup script  
+#
+# chkconfig: - 5 99 01
+# description: Organicity Proxy startup script
 
 export NAME=oc-proxy
 export SOURCE_DIR=/opt/oc-proxy

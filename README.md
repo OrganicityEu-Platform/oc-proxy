@@ -26,3 +26,30 @@ cp scripts/etc/init.d/oc-proxy /etc/init.d/
 /etc/init.d/oc-proxy status
 ```
 
+## Autostart
+
+### Ubuntu (14.04)
+
+Add:
+
+```
+sudo update-rc.d oc-proxy defaults
+```
+
+Enable/Disable:
+
+```
+sudo update-rc.d oc-proxy enable
+sudo update-rc.d oc-proxy disable
+```
+
+Remove:
+
+```
+sudo update-rc.d -f oc-proxy remove
+```
+
+### Cent OS
+
+TODO
+

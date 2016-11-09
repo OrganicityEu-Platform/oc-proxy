@@ -678,6 +678,7 @@ validation.checkValidityOfAssetType = function(req, res, next) {
     var found = false;
     for (var i = 0; i < assetTypes.length; i++) {
       var a = assetTypes[i];
+      console.log(asset_type, '===', a.urn);
       if(asset_type === a.urn) {
         console.log('   ', a.urn);
         found = true;

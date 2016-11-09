@@ -109,6 +109,7 @@ validation.rolehandler = function (roles) {
   return function(req, res, next) {
 
     console.log('\n### Check roles');
+    console.log('Roles in token:', req.token.realm_access.roles);
 
     for(var i = 0; i < roles.length; i++) {
       var role = roles[i];
@@ -295,9 +296,9 @@ validation.isSubParticipantExperimenterOfExperiment = function(req, res, next) {
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
     // This will be called, if the sub is the expermenter of the experiment
     next();
-  }, function() {
+  }, function(status, responseText) {
     // This will be called, if the sub is NOT the expermenter of the experiment
-
+    console.log(status, responseText);
     // Check whether a participant takes part in the experiment
     // GET /emscheck/participant-experiment/{parId}/{expId}
     var optionsCall = {

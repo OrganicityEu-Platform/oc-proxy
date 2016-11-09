@@ -673,13 +673,13 @@ validation.checkValidityOfAssetType = function(req, res, next) {
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
 
     var assetTypes = JSON.parse(responseText);
-    console.log(assetTypes);
 
     var found = false;
     for (var i = 0; i < assetTypes.length; i++) {
       var a = assetTypes[i];
-      console.log(asset_type, '===', a.urn);
-      if(asset_type === a.urn) {
+      //console.log(asset_type, '===', a.urn);
+      // Remove toLowerCase, if issue with camel case is fixed
+      if(asset_type.toLowerCase() === a.urn.toLowerCase()) {
         console.log('   ', a.urn);
         found = true;
       }
@@ -713,8 +713,6 @@ validation.checkValidityOfAssetType = function(req, res, next) {
         name: assetName
       };
 
-      // REMOVE if issue is fixed!
-      //next();
       httpClient.sendData(optionsCall, JSON.stringify(newAsset), res, function(status, responseText, headers) {
         // Push unregisteredassettype was successful
         next();

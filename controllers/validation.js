@@ -648,11 +648,12 @@ validation.checkValidityOfAssetType = function(req, res, next) {
   console.log('\n### Check the validity of the Asset Type');
 
   var asset = req.oc.asset;
-  var item_type = asset.type;
+  var asset_type = asset.type;
+  console.log('asset_type:', asset_type);
   var allowedPrefix = 'urn:oc:entityType:';
 
   // (e) Check, if the prefix of the asset is correct
-  if(!item_type.startsWith(allowedPrefix)) {
+  if(!asset_type.startsWith(allowedPrefix)) {
     errorHandler(res, 400, 'BadRequest', 'asset.type prefix must be ' + allowedPrefix)();
     return;
   }
@@ -670,12 +671,14 @@ validation.checkValidityOfAssetType = function(req, res, next) {
   };
 
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+
     var assetTypes = JSON.parse(responseText);
+    console.log(assetTypes);
 
     var found = false;
     for (var i = 0; i < assetTypes.length; i++) {
       var a = assetTypes[i];
-      if(item_type === a.urn) {
+      if(asset_type === a.urn) {
         console.log('   ', a.urn);
         found = true;
       }
@@ -689,7 +692,7 @@ validation.checkValidityOfAssetType = function(req, res, next) {
       // If the assed cannot be found, we inform the `OrganiCity Platform Management API` about it
 
       // Remove the prefix before posting
-      var assetName = item_type.substring(allowedPrefix.length);
+      var assetName = asset_type.substring(allowedPrefix.length);
 
       console.log('Asset type unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
 
@@ -710,14 +713,11 @@ validation.checkValidityOfAssetType = function(req, res, next) {
       };
 
       // REMOVE if issue is fixed!
-      next();
-      /*
+      //next();
       httpClient.sendData(optionsCall, JSON.stringify(newAsset), res, function(status, responseText, headers) {
         // Push unregisteredassettype was successful
         next();
       }, errorHandler(res));
-      */
-
     }
   }, errorHandler(res));
 };

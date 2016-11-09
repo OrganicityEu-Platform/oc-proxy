@@ -711,7 +711,7 @@ validation.checkValidityOfAssetType = function(req, res, next) {
       httpClient.sendData(optionsCall, JSON.stringify(newAsset), res, function(status, responseText, headers) {
         // Push unregisteredassettype was successful
         next();
-      });
+      }, errorHandler(res));
     }
   }, errorHandler(res));
 };
@@ -944,7 +944,8 @@ validation.sendResponse = function(req, res, next) {
 };
 
 validation.default = function(req, res, next) {
-  errorHandler(res, 500, 'InternalServerError', 'Pipline error')();
+  // Will be an InternalServerError
+  errorHandler(res, undefined, undefined, 'Pipline error')();
 };
 
 validation.logUpdate = function(req, res, next) {

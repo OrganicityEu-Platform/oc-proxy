@@ -709,10 +709,15 @@ validation.checkValidityOfAssetType = function(req, res, next) {
         name: assetName
       };
 
+      // REMOVE if issue is fixed!
+      next();
+      /*
       httpClient.sendData(optionsCall, JSON.stringify(newAsset), res, function(status, responseText, headers) {
         // Push unregisteredassettype was successful
         next();
       }, errorHandler(res));
+      */
+
     }
   }, errorHandler(res));
 };

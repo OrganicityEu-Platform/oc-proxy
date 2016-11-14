@@ -1,8 +1,10 @@
 var config = require('./../config.js');
 var httpClient = require('./../lib/HTTPClient.js');
+
 var log = require('./../lib/logger').logger.getLogger("Validation");
 var url = require('url');
 var indexOf = require('indexof-shim');
+var moment = require('moment');
 
 var redis = require("redis").createClient();
 var lock = require("redis-lock")(redis);
@@ -586,12 +588,11 @@ validation.checkForNonAllowedAttributes = function(req, res, next) {
   next();
 };
 
-var typeIso8601 = 'urn:oc:attributeType:ISO8601';
-
 validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
 
   console.log('\n### Check, if ISO8601 is correct');
 
+  var typeIso8601 = 'urn:oc:attributeType:ISO8601';
   var asset = req.oc.asset;
   var timeInstant = asset.TimeInstant;
 
@@ -605,43 +606,26 @@ validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
       return;
     }
 
-    // verify the value
+    // verifiy, if the value is provided
     var value = timeInstant.value;
-
-    // Z at the end is UTC!
-    // Verify value, e.g., `2013-12-31T23:59:59Z`
-    /*
-    var moment = require('moment');
-
-    var pattern = "YYYY-MM-DDTHH:mm:ss";
-    var pattern2 = "YYYY-MM-DDTHH:mm:ssZ";
-
-    var a = moment("2013-12-31T23:59:59", pattern, true).isValid();
-    console.log(a);
-
-    var b = moment("2013-12-31T23:59:59Z", pattern2, true).isValid();
-    console.log(b);
-
-    var c = moment("2013-12-31T23:59:59+0100", pattern, true).isValid();
-    console.log(c);
-
-    var d = moment("2013-12-31T23:59:59+01:00", pattern, true).isValid();
-    console.log(d);
-
-    var e = moment("2013-12-31T23:59:59+ABC", pattern, true).isValid();
-    console.log(e);
-
-    if(!moment(value).isValid()) {
-      errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant.value is not valid!')();
+    if(!value) {
+      errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant.value not provided!')();
       return;
     }
-    */
 
-    next();
+    // verify, that the value follows the pattern "YYYY-MM-DDTHH:mm:ss.SSSZ"
+    // Validation is string, so ist must be exacly the format YYYY-MM-DDTHH:mm:ss.SSSZ.
+    // A valid time is 2016-10-04T13:45:00.009Z (Z at the end is UTC)
+
+    var pattern = "YYYY-MM-DDTHH:mm:ss.SSSZ"
+	var m = moment(value, pattern, true);
+    if(m.isValid()) {
+      next();
+    } else {
+      errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant.value is not in the required format YYYY-MM-DDTHH:mm:ss.SSSZ')();
+    }
   }
-
 };
-
 
 validation.checkValidityOfAssetType = function(req, res, next) {
 

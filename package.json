@@ -1,8 +1,8 @@
 {
-  "name": "fiware-pep-proxy",
+  "name": "oc-proxy",
   "version": "0.1.0",
-  "description": "PEP oauth2 authentication proxy for FIWARE GE services",
-  "author": "GING DIT UPM",
+  "description": "Organicity OC Proxy",
+  "author": "Dennis Boldt",
   "dependencies": {
     "errorhandler": "1.x",
     "escape-html": "1.0.3",
@@ -25,20 +25,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ging/fiware-pep-proxy"
+    "url": "https://github.com/OrganicityEu-Platform/oc-proxy"
   },
-  "contributors": [
-    {
-      "name": "Alvaro Alonso",
-      "email": "aalonsog@dit.upm.es"
-    },
-    {
-      "name": "Javier Cerviño",
-      "email": "jcervino@dit.upm.es"
-    }
-  ],
   "scripts": {
-    "start": "node server.js",
-    "test": "./node_modules/.bin/mocha sanity/test.js -R spec"
+    "start": "node server.js"
   }
 }

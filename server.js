@@ -10,6 +10,10 @@ var log = require('./lib/logger').logger.getLogger("Server");
 
 var express = require('express');
 
+if(config.opbeat) {
+  var opbeat = require('opbeat').start(config.opbeat);
+}
+
 /*
 process.on('uncaughtException', function (err) {
   log.error('Caught exception: ' + err);

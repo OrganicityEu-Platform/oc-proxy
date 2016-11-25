@@ -44,4 +44,12 @@ config.experiment_management_api = {
 // example: ['/public/*', '/static/css/']
 config.public_paths = [];
 
+/*
+config.opbeat = {
+  appId: '<app id>',
+  organizationId: '<org id>',
+  secretToken: '<token>'
+};
+*/
+
 module.exports = config;

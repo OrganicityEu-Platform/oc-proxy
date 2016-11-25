@@ -33,8 +33,6 @@ app.use (function(req, res, next) {
     });
 });
 
-app.use(errorhandler({log: log.error}))
-
 app.use(function (req, res, next) {
     "use strict";
     res.header('Access-Control-Allow-Origin', '*');
@@ -66,6 +64,12 @@ app.post('/v2/entities', ChainsOfResponsibility[config.chain].post);
 app.get('/v2/entities/:assetId', ChainsOfResponsibility[config.chain].get);
 app.post('/v2/entities/:assetId/attrs', ChainsOfResponsibility[config.chain].put);
 app.delete('/v2/entities/:assetId', ChainsOfResponsibility[config.chain].delete);
+
+if(config.opbeat) {
+  app.use(opbeat.middleware.express());
+}
+
+app.use(errorhandler({log: log.error}))
 
 log.info('Starting OC proxy on port ' + port + '.');
 

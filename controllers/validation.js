@@ -420,11 +420,16 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
   // [5] - experiment id
   // [6] - assetid
 
-  console.log('\n### Check the validity of the asset ID (experimenters)');
+  console.log('\n### Check the validity of the Asset ID (experimenters)');
 
   console.log('id: ', assetId);
-  var assetIdPrefix = 'urn:oc:entity:experimenters:';
 
+  if(!assetId) {
+    errorHandler(res, 400, 'BadRequest', 'No Asset ID provided!')();
+    return;
+  }
+
+  var assetIdPrefix = 'urn:oc:entity:experimenters:';
   if(!assetId.startsWith(assetIdPrefix)) {
     errorHandler(res, 400, 'BadRequest', 'Asset.id prefix wrong. Must be ' + assetIdPrefix)();
     return;

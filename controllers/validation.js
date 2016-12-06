@@ -82,7 +82,7 @@ validation.bearer = function(req, res, next) {
 
     if(!token) {
       var msg = 'Unknown error';
-      // The info format is a bit weired. Thus, we must pars it to be able to provide the message, why the login fails
+      // The info format is a bit weired. Thus, we must parse it to be able to provide the message, why the login fails
       // @See:
       // https://github.com/jaredhanson/passport-http-bearer/blob/43cd6a065836d02a6337539300b23ca89253cfa5/lib/strategy.js#L141
       if(info) {
@@ -100,6 +100,7 @@ validation.bearer = function(req, res, next) {
     }
 
     console.log('Token valid');
+    console.log(token);
     req.token = token;
     next();
   })(req, res, next);
@@ -115,7 +116,6 @@ validation.rolehandler = function (roles) {
       var role = roles[i];
       console.log('Check role: ', role);
       if(indexOf(req.token.realm_access.roles, role) >= 0) {
-        req.headers['x-auth-subject'] = req.token.sub;
         console.log('found');
         next();
         return;
@@ -141,15 +141,6 @@ validation.checkHeaderOrganicityExperiment = function(req, res, next) {
     return;
   }
   req.oc.expid = req.headers['x-organicity-experiment'];
-  next();
-};
-
-validation.checkHeaderAuthSub  = function(req, res, next) {
-  // This header is provided by the keycloak proxy
-  if(!headerExists(req.headers, 'x-auth-subject', res, true)) {
-    return;
-  }
-  req.oc.sub = req.headers['x-auth-subject'];
   next();
 };
 
@@ -210,12 +201,16 @@ validation.checkHeaderFiwareAbstinence = function(req, res, next) {
 
 
 validation.printHeader  = function(req, res, next) {
-  console.log('\n### Data extracted from the header');
+  console.log('\n### Data extracted from the HTTP header');
   console.log('appid:       ', req.oc.appid);
   console.log('expid:       ', req.oc.expid);
-  console.log('sub:         ', req.oc.sub);
   console.log('content-type:', req.headers['content-type']);
   console.log('accept:      ', req.headers['accept']);
+
+  console.log('\n### Data extracted from the Access token');
+  console.log('sub:         ', req.token.sub);
+  console.log('clientId:    ', req.token.clientId);
+
   next();
 }
 
@@ -278,45 +273,76 @@ validation.getAccessToken = function(req, res, next) {
 
 // This checks, if the sub is a participant/experimenter of the experiment
 validation.isSubParticipantExperimenterOfExperiment = function(req, res, next) {
-  console.log('\n### Is sub a participant/experimenter of the experiment?');
 
-  // Check whether an experimenter is the owner of one experiment
-  // GET /emscheck/experimentowner/{experId}/{expId}
-  var optionsCall = {
-    protocol: config.experiment_management_api.protocol,
-    host: config.experiment_management_api.host,
-    port: config.experiment_management_api.port,
-    path: '/emscheck/experimentowner/' + req.oc.sub + '/' + req.oc.expid,
-    method: 'GET',
-    headers : {
-      'authorization' : 'Bearer: ' + req.oc.access_token
-    }
-  };
+  console.log('\n### Is sub/clientID a participant/experimenter of the experiment?');
 
-  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-    // This will be called, if the sub is the expermenter of the experiment
-    next();
-  }, function(status, responseText) {
-    // This will be called, if the sub is NOT the expermenter of the experiment
-    console.log(status, responseText);
-    // Check whether a participant takes part in the experiment
-    // GET /emscheck/participant-experiment/{parId}/{expId}
+  var err = errorHandler(res, 400, 'BadRequest', 'You`re not part of the experiment given in the HTTP header.');
+
+  // if clientId is inside the token, then a service account is used
+  if(req.token.clientId) {
+
+    // Check whether the clientid belongs to an experiment
+    // GET /emscheck/client-experiment/{clientId}/{expId}
     var optionsCall = {
       protocol: config.experiment_management_api.protocol,
       host: config.experiment_management_api.host,
       port: config.experiment_management_api.port,
-      path: '/emscheck/participant-experiment/' + req.oc.sub + '/' + req.oc.expid,
+      path: '/emscheck/client-experiment/' + req.token.clientId + '/' + req.oc.expid,
       method: 'GET',
       headers : {
         'authorization' : 'Bearer: ' + req.oc.access_token
       }
     };
 
+    console.log('\n# Is', req.token.clientId, 'a client of the experiment', req.oc.expid, '?');
     httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-      // This will be called, if the sub is a participant of the experiment
+      // This will be called, if the clientID belongs to an experiment
       next();
-    }, errorHandler(res, 400, 'BadRequest', 'You`re not part of the experiment given in the HTTP header.'));
-  });
+    }, err);
+  } else {
+
+    // Check whether an experimenter is the owner of one experiment
+    // GET /emscheck/experimentowner/{experId}/{expId}
+    var optionsCall = {
+      protocol: config.experiment_management_api.protocol,
+      host: config.experiment_management_api.host,
+      port: config.experiment_management_api.port,
+      path: '/emscheck/experimentowner/' + req.token.sub + '/' + req.oc.expid,
+      method: 'GET',
+      headers : {
+        'authorization' : 'Bearer: ' + req.oc.access_token
+      }
+    };
+
+    console.log('\n# Is',req.token.sub, 'an experimenter owner of the experiment', req.oc.expid, '?');
+
+    httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+      // This will be called, if the sub is the expermenter of the experiment
+      next();
+    }, function(status, responseText) {
+      // This will be called, if the sub is NOT the expermenter of the experiment
+      console.log(status, responseText);
+      // Check whether a participant takes part in the experiment
+      // GET /emscheck/participant-experiment/{parId}/{expId}
+      var optionsCall = {
+        protocol: config.experiment_management_api.protocol,
+        host: config.experiment_management_api.host,
+        port: config.experiment_management_api.port,
+        path: '/emscheck/participant-experiment/' + req.token.sub + '/' + req.oc.expid,
+        method: 'GET',
+        headers : {
+          'authorization' : 'Bearer: ' + req.oc.access_token
+        }
+      };
+
+      console.log('\n# Is',req.token.sub, 'a participant owner of the experiment', req.oc.expid, '?');
+      httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+        // This will be called, if the sub is a participant of the experiment
+        next();
+      }, err);
+    });
+  }
+
 };
 
 // Check whether an application belongs to one experiment

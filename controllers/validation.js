@@ -651,6 +651,7 @@ validation.checkValidityOfAssetTimeInstant = function(req, res, next) {
     var pattern = "YYYY-MM-DDTHH:mm:ss.SSSZ"
 	var m = moment(value, pattern, true);
     if(m.isValid()) {
+      console.log('true');
       next();
     } else {
       errorHandler(res, 400, 'BadRequest', 'Asset attribute TimeInstant.value is not in the required format YYYY-MM-DDTHH:mm:ss.SSSZ')();

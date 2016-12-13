@@ -1,31 +1,31 @@
-var config = require('./config'),
-    fs = require('fs'),
-    https = require('https'),
-    ChainsOfResponsibility = require('./controllers/ChainsOfResponsibility'),
-    errorhandler = require('errorhandler');
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+var config = require('./config');
+var opbeat = undefined;
+
+if(config.opbeat) {
+  opbeat = require('opbeat').start(config.opbeat);
+}
+
+var fs = require('fs');
+var https = require('https');
+var ChainsOfResponsibility = require('./controllers/ChainsOfResponsibility');
 
 config.https = config.https || {};
 
 var log = require('./lib/logger').logger.getLogger("Server");
 
 var express = require('express');
-
-if(config.opbeat) {
-  var opbeat = require('opbeat').start(config.opbeat);
-}
+var app = express();
 
 /*
 process.on('uncaughtException', function (err) {
   log.error('Caught exception: ' + err);
 });
 */
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
-var app = express();
-
-//app.use(express.bodyParser());
 
 app.use (function(req, res, next) {
+  console.log('Body handler!');
     var bodyChunks = [];
     req.on('data', function(chunk) {
        bodyChunks.push(chunk);
@@ -39,6 +39,7 @@ app.use (function(req, res, next) {
 
 app.use(function (req, res, next) {
     "use strict";
+  console.log('CORS handler!');
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'HEAD, POST, PUT, GET, OPTIONS, DELETE');
     res.header('Access-Control-Allow-Headers', 'origin, content-type, X-Auth-Token, Tenant-ID, Authorization, x-organicity-application, x-organicity-experiment');
@@ -70,10 +71,20 @@ app.post('/v2/entities/:assetId/attrs', ChainsOfResponsibility[config.chain].put
 app.delete('/v2/entities/:assetId', ChainsOfResponsibility[config.chain].delete);
 
 if(config.opbeat) {
+  console.log('Use Opbeat error logging');
   app.use(opbeat.middleware.express());
 }
 
-app.use(errorhandler({log: log.error}))
+// Put a catch-all route handler as the very last route handler
+app.use(function (req, res) {
+  // If we reach this point it means that no prior route matched.
+  // This means that we should render a "404 Not Found" page. Notice
+  // that we do not call next() here as we don't want to forward the
+  // request to the error handler below.
+
+  // Send a 404 to the user
+  res.status(404).send('404 - Page not found!')
+});
 
 log.info('Starting OC proxy on port ' + port + '.');
 

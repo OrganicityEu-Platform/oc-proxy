@@ -112,18 +112,19 @@ validation.rolehandler = function (roles) {
   return function(req, res, next) {
 
     console.log('\n### Check roles');
-    console.log('Roles in token:', req.token.realm_access.roles);
-
-    for(var i = 0; i < roles.length; i++) {
-      var role = roles[i];
-      console.log('Check role: ', role);
-      if(indexOf(req.token.realm_access.roles, role) >= 0) {
-        console.log('found');
-        next();
-        return;
+    if(req.token.realm_access && req.token.realm_access.roles) {
+      console.log('Roles in token:', req.token.realm_access.roles);
+      for(var i = 0; i < roles.length; i++) {
+        var role = roles[i];
+        console.log('Check role: ', role);
+        if(indexOf(req.token.realm_access.roles, role) >= 0) {
+          console.log('found');
+          next();
+          return;
+        }
       }
     }
-    console.log('not found');
+
     res.status(403).send('You dont have to role to access this endpoint!');
   }
 };

@@ -48,7 +48,9 @@ config.public_paths = [];
 config.opbeat = {
   appId: '<app id>',
   organizationId: '<org id>',
-  secretToken: '<token>'
+  secretToken: '<token>',
+  active: true,
+  instrument : true,
 };
 */
 

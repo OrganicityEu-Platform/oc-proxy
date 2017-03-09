@@ -44,7 +44,7 @@ var ChainsOfResponsibility = (function() {
         validation.checkValidityOfSiteAssetIdFromParam,
         validation.callFinalServer,
         validation.sendResponse
-        ],
+      ],
       put : [
         validation.init,
         validation.logUpdate,
@@ -61,6 +61,9 @@ var ChainsOfResponsibility = (function() {
         validation.addSitePrivacy,
         validation.callFinalServer,
         validation.sendResponse
+      ],
+      status : [
+        validation.status
       ]
     },
     experimenter : {
@@ -150,6 +153,9 @@ var ChainsOfResponsibility = (function() {
         validation.addFiWareSignature,
         validation.callFinalServer,
         validation.sendResponse
+      ],
+      status : [
+        validation.status
       ]
     }
   };

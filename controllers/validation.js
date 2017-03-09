@@ -965,6 +965,11 @@ validation.sendResponse = function(req, res, next) {
   res.send(res.oc.responseText);
 };
 
+validation.status = function(req, res, next) {
+  return res.status(200).send("OC Proxy up.");
+};
+
+
 validation.default = function(req, res, next) {
   // Will be an InternalServerError
   errorHandler(res, undefined, undefined, 'Pipline error')();

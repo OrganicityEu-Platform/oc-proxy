@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Organicity Proxy startup script  
+# Organicity Proxy startup script
 #
 # chkconfig: 345 99 01
 # description: Organicity Proxy startup script
@@ -46,7 +46,7 @@ case "$1" in
     case "$PID" in
       0)
         echo "START $NAME"
-        forever start --pidFile $PID_PATH -a -o $LOG_DIR/$NAME.out -e $LOG_DIR/$NAME.err -l $LOG_DIR/$NAME$ $SCRIPT
+        forever start --pidFile $PID_PATH -a -o $LOG_DIR/$NAME.out -e $LOG_DIR/$NAME.err -l $LOG_DIR/$NAME.log $SCRIPT
       ;;
       *)
         echo "$NAME is running already (PID $PID)"

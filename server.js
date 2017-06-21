@@ -60,10 +60,6 @@ var port = config.port || 80;
 if (config.https.enabled) port = config.https.port || 443;
 app.set('port', port);
 
-for (var p in config.public_paths) {
-    log.debug('Public paths', config.public_paths[p]);
-    app.all(config.public_paths[p], Root.public);
-}
 app.get('/', ChainsOfResponsibility[config.chain].status);
 app.post('/v2/entities', ChainsOfResponsibility[config.chain].post);
 app.get('/v2/entities/:assetId', ChainsOfResponsibility[config.chain].get);

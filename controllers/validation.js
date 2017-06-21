@@ -274,147 +274,42 @@ validation.getAccessToken = function(req, res, next) {
   }); // lock
 };
 
-// This checks, if the sub is a participant/experimenter of the experiment
-validation.isSubParticipantExperimenterOfExperiment = function(req, res, next) {
+/*
 
-  console.log('\n### Is sub/clientID a participant/experimenter of the experiment?');
+-path /emscheck/can-create-asset/:sub/:expId/:appId/:cliId/:owner
 
-  var err = errorHandler(res, 400, 'BadRequest', 'You`re not part of the experiment given in the HTTP header.');
++ sub -- subscriber in the header
++ expId -- experiment ID
++ appId -- application ID
++ cliID -- client ID
++ owner -- main experimenter (what goes on the asset ID)
 
-  // if clientId is inside the token, then a service account is used
-  if(req.token.clientId) {
-
-    // Check whether the clientid belongs to an experiment
-    // GET /emscheck/client-experiment/{clientId}/{expId}
-    var optionsCall = {
-      protocol: config.experiment_management_api.protocol,
-      host: config.experiment_management_api.host,
-      port: config.experiment_management_api.port,
-      path: '/emscheck/client-experiment/' + req.token.clientId + '/' + req.oc.expid,
-      method: 'GET',
-      headers : {
-        'authorization' : 'Bearer: ' + req.oc.access_token
-      }
-    };
-
-    console.log('\n# Is', req.token.clientId, 'a client of the experiment', req.oc.expid, '?');
-    httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-      // This will be called, if the clientID belongs to an experiment
-      next();
-    }, err);
-  } else {
-
-    // Check whether an experimenter is the owner of one experiment
-    // GET /emscheck/experimentowner/{experId}/{expId}
-    var optionsCall = {
-      protocol: config.experiment_management_api.protocol,
-      host: config.experiment_management_api.host,
-      port: config.experiment_management_api.port,
-      path: '/emscheck/experimentowner/' + req.token.sub + '/' + req.oc.expid,
-      method: 'GET',
-      headers : {
-        'authorization' : 'Bearer: ' + req.oc.access_token
-      }
-    };
-
-    console.log('\n# Is',req.token.sub, 'an experimenter owner of the experiment', req.oc.expid, '?');
-
-    httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-      // This will be called, if the sub is the expermenter of the experiment
-      next();
-    }, function(status, responseText) {
-      // This will be called, if the sub is NOT the expermenter of the experiment
-      console.log(status, responseText);
-      // Check whether a participant takes part in the experiment
-      // GET /emscheck/participant-experiment/{parId}/{expId}
-      var optionsCall = {
-        protocol: config.experiment_management_api.protocol,
-        host: config.experiment_management_api.host,
-        port: config.experiment_management_api.port,
-        path: '/emscheck/participant-experiment/' + req.token.sub + '/' + req.oc.expid,
-        method: 'GET',
-        headers : {
-          'authorization' : 'Bearer: ' + req.oc.access_token
-        }
-      };
-
-      console.log('\n# Is',req.token.sub, 'a participant owner of the experiment', req.oc.expid, '?');
-      httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-        // This will be called, if the sub is a participant of the experiment
-        next();
-      }, err);
-    });
-  }
-
-};
-
-// Check whether an application belongs to one experiment
-validation.doesApplicationbelongToAnExperiment = function(req, res, next) {
-
-  console.log('\n### Does an application belong to one experiment?');
-
+*/
+validation.canCreateAsset = function(req, res, next) {
   var optionsCall = {
     protocol: config.experiment_management_api.protocol,
     host: config.experiment_management_api.host,
     port: config.experiment_management_api.port,
-    path: '/emscheck/application-experiment/' +  req.oc.expid + '/' +  req.oc.appid,
+    path: '/emscheck/can-create-asset/' + req.token.sub + '/' + req.oc.expid + '/' + req.oc.appid + '/' + req.token.clientId + '/' + req.oc.main_experimenter_id,
     method: 'GET',
     headers : {
-      'authorization' : 'Bearer ' +  req.oc.access_token
+      'authorization' : 'Bearer: ' + req.oc.access_token
     }
   };
 
+  console.log('\n# Call expeirmenation API');
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+    console.log('OK');
+    var json = JSON.parse(responseText);
+    req.oc.privacy = json.privacy;
     next();
-  }, errorHandler(res, 400, 'BadRequest', 'Application given in the HTTP header does not belong to the experiment'));
-};
+  }, function(status, responseText, headers) {
+    var json = JSON.parse(responseText);
+    console.log('ERROR:', json.message);
+    errorHandler(res, 400, 'BadRequest', json.message)();
+  });
 
-validation.isExperimentRunning = function(req, res, next) {
-  console.log('\n### Is the experiment running?');
-
-  var optionsCall = {
-    protocol: config.experiment_management_api.protocol,
-    host: config.experiment_management_api.host,
-    port: config.experiment_management_api.port,
-    path: '/emscheck/experimentrunning/' + req.oc.expid,
-    method: 'GET',
-    headers : {
-      'authorization' : 'Bearer ' + req.oc.access_token
-    }
-  };
-
-  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-    next();
-  }, errorHandler(res, 400, 'BadRequest', 'This experiment is not running!'));
-};
-
-// Does the experiment have quota
-validation.doesExperimentHaveQuota = function(req, res, next) {
-  console.log('\n### Does the experiment have quota?');
-
-  var optionsCall = {
-    protocol: config.experiment_management_api.protocol,
-    host: config.experiment_management_api.host,
-    port: config.experiment_management_api.port,
-    path: '/experiments/' + req.oc.expid + '/remainingquota',
-    method: 'GET',
-    headers : {
-      'authorization' : 'Bearer ' + req.oc.access_token
-    }
-  };
-
-  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-    var responseJson = JSON.parse(responseText);
-    var quota = responseJson.remainingQuota;
-
-    console.log('Quota: ', quota);
-    if(quota > 0) {
-      next();
-    } else {
-      errorHandler(res, 400, 'BadRequest', 'The experiment reached the quota')();
-    }
-  }, errorHandler(res));
-};
+}
 
 // req.oc.sitename must be known prior from the token!
 validateSiteAssetId = function(assetId, req, res, next) {
@@ -469,6 +364,7 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
   var urn_experiment_id = urn_parts[5];
   var urn_asset_id = urn_parts[6];
 
+
   console.log('Prefix:', 'urn:oc:entity:experimenters');
   console.log('urn_main_experimenter_id:', urn_main_experimenter_id);
   console.log('urn_experiment_id:', urn_experiment_id);
@@ -480,33 +376,15 @@ var validateExperimenterAssetId = function(assetId, req, res, next) {
     return;
   }
 
+  req.oc.assetId = assetId;
+  req.oc.main_experimenter_id = urn_main_experimenter_id;
+
+  console.log('req.oc.main_experimenter_id', req.oc.main_experimenter_id);
+
+  next();
+
   // (c) Check, if the main experimenter id within the URN of the asset equals the main experimenter id
-  var optionsCall = {
-    protocol: config.experiment_management_api.protocol,
-    host: config.experiment_management_api.host,
-    port: config.experiment_management_api.port,
-    path: '/experiments/' + req.oc.expid + '/mainexperimenter',
-    method: 'GET',
-    headers : {
-      'authorization' : 'Bearer ' + req.oc.access_token
-    }
-  };
-
-  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-
-    var responseJson = JSON.parse(responseText);
-    var mainExperimenter = responseJson.mainExperimenter;
-
-    if(urn_main_experimenter_id !== mainExperimenter) {
-      console.log(urn_main_experimenter_id + ' != ', mainExperimenter);
-      errorHandler(res, 400, 'BadRequest', 'The given experimenter id `' + urn_main_experimenter_id + '` within th asset id is wrong')();
-      return;
-    }
-    console.log('AssetID valid!');
-    req.oc.assetId = assetId;
-    next();
-  }, errorHandler(res));
-
+  // done in the new canCreateAsset step
 }
 
 validation.checkValidityOfExperimenterAssetIdFromParam = function(req, res, next) {
@@ -677,9 +555,9 @@ validation.checkValidityOfAssetType = function(req, res, next) {
 
   // (f) Get the available assetTypes from the OrganiCity Platform Management API
   var optionsCall = {
-      protocol: config.platform_management_api.protocol,
-      host: config.platform_management_api.host,
-      port: config.platform_management_api.port,
+      protocol: config.facility_management_api.protocol,
+      host: config.facility_management_api.host,
+      port: config.facility_management_api.port,
       path: '/v1/dictionary/assettypes',
       method: 'GET',
       headers : {
@@ -715,9 +593,9 @@ validation.checkValidityOfAssetType = function(req, res, next) {
       console.log('Asset type unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
 
       var optionsCall = {
-        protocol: config.platform_management_api.protocol,
-        host: config.platform_management_api.host,
-        port: config.platform_management_api.port,
+        protocol: config.facility_management_api.protocol,
+        host: config.facility_management_api.host,
+        port: config.facility_management_api.port,
         path: '/v1/dictionary/unregisteredassettype',
         method: 'POST',
         headers : {
@@ -817,8 +695,12 @@ validation.decreaseExperimentQuota = function(req, res, next) {
     }
   };
 
-  httpClient.sendData(optionsCall, undefined, res, function() {
-    console.log('DECREASE OKAY!');
+  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
+    console.log('DECREASE OKAY!', responseText);
+
+    var json = JSON.parse(responseText);
+    res.oc.headers['X-remainingQuota'] = json.remainingQuota;
+
     next();
   }, errorHandler(res));
 }
@@ -838,6 +720,11 @@ validation.increaseExperimentQuota = function(req, res, next) {
   };
 
   httpClient.sendData(optionsCall, undefined, res, function() {
+    console.log('INCREASE OKAY!', responseText);
+
+    var json = JSON.parse(responseText);
+    res.oc.headers['X-remainingQuota'] = json.remainingQuota;
+
     next();
   }, errorHandler(res));
 };
@@ -847,9 +734,9 @@ validation.doesSiteHaveQuota = function (req, res, next) {
   console.log('\n### Does site have quota?');
 
   var optionsCall = {
-    protocol: config.platform_management_api.protocol,
-    host: config.platform_management_api.host,
-    port: config.platform_management_api.port,
+    protocol: config.facility_management_api.protocol,
+    host: config.facility_management_api.host,
+    port: config.facility_management_api.port,
     path: '/v1/sites/' + req.oc.sitename,
     method: 'GET',
     headers : {
@@ -872,9 +759,9 @@ validation.doesSiteHaveQuota = function (req, res, next) {
 validation.increaseSiteQuota = function(req, res, next) {
   console.log('\n### Increase Site Quota');
   var optionsCall = {
-    protocol: config.platform_management_api.protocol,
-    host: config.platform_management_api.host,
-    port: config.platform_management_api.port,
+    protocol: config.facility_management_api.protocol,
+    host: config.facility_management_api.host,
+    port: config.facility_management_api.port,
     path: '/v1/sites/' + req.oc.sitename + '/quota/increment',
     method: 'GET',
     headers : {
@@ -891,9 +778,9 @@ validation.decreaseSiteQuota = function(req, res, next) {
   console.log('\n### Decrease Site Quota');
 
   var optionsCall = {
-    protocol: config.platform_management_api.protocol,
-    host: config.platform_management_api.host,
-    port: config.platform_management_api.port,
+    protocol: config.facility_management_api.protocol,
+    host: config.facility_management_api.host,
+    port: config.facility_management_api.port,
     path: '/v1/sites/' + req.oc.sitename + '/quota/decrement',
     method: 'GET',
     headers : {
@@ -906,8 +793,40 @@ validation.decreaseSiteQuota = function(req, res, next) {
   });
 };
 
+validation.addExperimenterSitePrivacy = function(req, res, next) {
+  console.log('\n### Add Site Privacy');
+
+  if(req.oc.sitename === 'experimenters') {
+    privacy = req.oc.privacy;
+  } else {
+    privacy = 'public';
+  }
+
+  req.oc.asset['access:scope'] = {
+    "type": "urn:oc:attributeType:access:scope",
+    "value": privacy
+  }
+  next();
+};
+
+
+/*
+ * Used by central site
+ */
 validation.addSitePrivacy = function(req, res, next) {
   console.log('\n### Add Site Privacy');
+
+  // Site can add the scope
+  if(req.oc.asset['access:scope']) {
+    // Check if the scobe has the correct format
+    if( req.oc.asset['access:scope'].type === "urn:oc:attributeType:access:scope"
+        &&
+        (req.oc.asset['access:scope'].type === "private" || req.oc.asset['access:scope'].type === "public")
+    ) {
+      next();
+    }
+    // if not, lets add it
+  }
 
   var addPrivacy = function (privacy) {
     req.oc.asset['access:scope'] = {

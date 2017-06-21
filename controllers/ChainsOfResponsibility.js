@@ -77,15 +77,16 @@ var ChainsOfResponsibility = (function() {
         validation.checkHeaderContentType,
         validation.checkHeaderFiwareAbstinence,
         validation.printHeader,
+
         validation.getAccessToken,
-        validation.isSubParticipantExperimenterOfExperiment,
-        validation.doesApplicationbelongToAnExperiment,
-        validation.isExperimentRunning,
-        validation.doesExperimentHaveQuota,
         validation.getAssetFromBody,
         validation.checkValidityOfExperimenterAssetIdFromBody,
+        validation.canCreateAsset, // EP portal
+
         validation.checkValidityOfAssetType,
+
         validation.checkForNonAllowedAttributes,
+
         validation.checkValidityOfAssetTimeInstant,
         validation.addFiWareSignature,
         validation.callFinalServer,
@@ -102,14 +103,15 @@ var ChainsOfResponsibility = (function() {
         validation.checkHeaderAccept,
         validation.checkHeaderFiwareAbstinence,
         validation.printHeader,
+
         validation.getAccessToken,
-        validation.isSubParticipantExperimenterOfExperiment,
-        validation.doesApplicationbelongToAnExperiment,
         validation.checkValidityOfExperimenterAssetIdFromParam,
+        validation.canCreateAsset, // EP portal
+
         validation.addFiWareSignature,
         validation.callFinalServer,
         validation.callNotificationProxy,
-        validation.increaseExperimentQuota,
+//        validation.increaseExperimentQuota,
         validation.sendResponse
       ],
       get : [
@@ -121,10 +123,11 @@ var ChainsOfResponsibility = (function() {
         validation.checkHeaderAccept,
         validation.checkHeaderFiwareAbstinence,
         validation.printHeader,
+
         validation.getAccessToken,
-        validation.isSubParticipantExperimenterOfExperiment,
-        validation.doesApplicationbelongToAnExperiment,
         validation.checkValidityOfExperimenterAssetIdFromParam,
+        validation.canCreateAsset, // EP portal
+
         validation.addFiWareSignature,
         validation.callFinalServer,
         validation.sendResponse
@@ -139,16 +142,16 @@ var ChainsOfResponsibility = (function() {
         validation.checkHeaderContentType,
         validation.checkHeaderFiwareAbstinence,
         validation.printHeader,
+
         validation.getAccessToken,
-        validation.isSubParticipantExperimenterOfExperiment,
-        validation.doesApplicationbelongToAnExperiment,
-        validation.isExperimentRunning,
-        validation.doesExperimentHaveQuota,
-        validation.checkValidityOfExperimenterAssetIdFromParam,
         validation.getAssetFromBody,
+        validation.checkValidityOfExperimenterAssetIdFromParam,
+        validation.canCreateAsset, // EP portal
+
+        validation.checkForNonAllowedAttributes,
         validation.checkForNonAllowedAttribute('id'),
         validation.checkForNonAllowedAttribute('type'),
-        validation.checkForNonAllowedAttributes,
+
         validation.checkValidityOfAssetTimeInstant,
         validation.addFiWareSignature,
         validation.callFinalServer,

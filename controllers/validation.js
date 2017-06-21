@@ -649,11 +649,7 @@ validation.callFinalServer = function(req, res, next){
       responseText : responseText
     }
     next();
-  }, function(status, responseText, headers) {
-    console.log('status:', status);
-    console.log('responseText:', responseText);
-    errorHandler(res);
-  });
+  }, errorHandler(res));
 };
 
 validation.callNotificationProxy = function(req, res, next) {

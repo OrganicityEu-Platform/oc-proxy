@@ -823,6 +823,7 @@ validation.addSitePrivacy = function(req, res, next) {
         &&
         (req.oc.asset['access:scope'].type === "private" || req.oc.asset['access:scope'].type === "public")
     ) {
+      console.log('Skip adding privacy, since it is provided in the asset.');
       next();
     }
     // if not, lets add it
@@ -838,7 +839,7 @@ validation.addSitePrivacy = function(req, res, next) {
 
   if(req.oc.sitename === 'experimenters') {
     // get /emscheck/assets-public/{expId}
-    console.log('Get privacy from Luis');
+    console.log('Get privacy from Experimentation API');
     var assetId = req.oc.assetId;
     var assetIdParts = assetId.split(':');
     var expId = assetIdParts[5];
@@ -863,6 +864,7 @@ validation.addSitePrivacy = function(req, res, next) {
     });
 
   } else {
+    console.log('privacy is public!');
     addPrivacy('public');
   }
 };

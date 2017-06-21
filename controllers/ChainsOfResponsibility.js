@@ -86,9 +86,11 @@ var ChainsOfResponsibility = (function() {
         validation.checkValidityOfAssetType,
 
         validation.checkForNonAllowedAttributes,
-
         validation.checkValidityOfAssetTimeInstant,
+
         validation.addFiWareSignature,
+        validation.addExperimenterSitePrivacy,
+
         validation.callFinalServer,
         validation.decreaseExperimentQuota,
         validation.fixLocationHeader,
@@ -109,6 +111,7 @@ var ChainsOfResponsibility = (function() {
         validation.canCreateAsset, // EP portal
 
         validation.addFiWareSignature,
+
         validation.callFinalServer,
         validation.callNotificationProxy,
 //        validation.increaseExperimentQuota,
@@ -129,6 +132,7 @@ var ChainsOfResponsibility = (function() {
         validation.canCreateAsset, // EP portal
 
         validation.addFiWareSignature,
+
         validation.callFinalServer,
         validation.sendResponse
       ],
@@ -151,9 +155,11 @@ var ChainsOfResponsibility = (function() {
         validation.checkForNonAllowedAttributes,
         validation.checkForNonAllowedAttribute('id'),
         validation.checkForNonAllowedAttribute('type'),
-
         validation.checkValidityOfAssetTimeInstant,
+
         validation.addFiWareSignature,
+        validation.addExperimenterSitePrivacy,
+
         validation.callFinalServer,
         validation.sendResponse
       ],

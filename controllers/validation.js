@@ -794,7 +794,7 @@ validation.decreaseSiteQuota = function(req, res, next) {
 };
 
 validation.addExperimenterSitePrivacy = function(req, res, next) {
-  console.log('\n### Add Site Privacy');
+  console.log('\n### Add Experimenter Site Privacy');
 
   if(req.oc.sitename === 'experimenters') {
     privacy = req.oc.privacy;

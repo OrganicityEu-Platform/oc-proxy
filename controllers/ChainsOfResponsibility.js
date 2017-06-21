@@ -20,7 +20,7 @@ var ChainsOfResponsibility = (function() {
         validation.doesSiteHaveQuota,
         validation.addSitePrivacy,
         validation.callFinalServer,
-        validation.decreaseSiteQuota,
+        //validation.decreaseSiteQuota,
         validation.sendResponse
       ],
       delete : [

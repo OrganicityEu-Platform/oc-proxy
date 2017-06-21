@@ -821,14 +821,14 @@ validation.addSitePrivacy = function(req, res, next) {
     // Check if the scobe has the correct format
     if( req.oc.asset['access:scope'].type === "urn:oc:attributeType:access:scope"
         &&
-        (req.oc.asset['access:scope'].type === "private" || req.oc.asset['access:scope'].type === "public")
+        (req.oc.asset['access:scope'].value === "private" || req.oc.asset['access:scope'].value === "public")
     ) {
       console.log('Skip adding privacy, since it is provided in the asset.');
-      next();
+      return next();
     }
-    // if not, lets add it
   }
 
+  // if scope is missed or wrong, lets add it
   var addPrivacy = function (privacy) {
     req.oc.asset['access:scope'] = {
       "type": "urn:oc:attributeType:access:scope",

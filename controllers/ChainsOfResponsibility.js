@@ -161,6 +161,7 @@ var ChainsOfResponsibility = (function() {
         validation.addExperimenterSitePrivacy,
 
         validation.callFinalServer,
+        validation.fixLocationHeader,
         validation.sendResponse
       ],
       status : [

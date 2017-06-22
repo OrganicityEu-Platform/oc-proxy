@@ -303,7 +303,7 @@ validation.canCreateAsset = function(req, res, next) {
     }
   };
 
-  console.log('\n# Call expeirmenation API');
+  console.log('\n# Call experimenation API');
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
     console.log('OK');
     var json = JSON.parse(responseText);
@@ -421,6 +421,7 @@ validation.getAssetFromBody = function(req, res, next) {
   }
 
   console.log('done');
+	console.log(req.oc.asset);
   next();
 
 };

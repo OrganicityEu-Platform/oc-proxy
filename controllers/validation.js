@@ -649,7 +649,14 @@ validation.callFinalServer = function(req, res, next){
       responseText : responseText
     }
     next();
-  }, errorHandler(res));
+  },  function(status, responseText, headers) {
+			var json = JSON.parse(responseText);
+			if(json.error === 'NotFound') {
+				errorHandler(res, 400, 'Noz found', json.description)();
+				return;
+			}
+			errorHandler(res)();
+	});
 };
 
 validation.callNotificationProxy = function(req, res, next) {

@@ -306,18 +306,26 @@ validation.canCreateAsset = function(req, res, next) {
     }
   };
 
-  console.log('\n# Call experimenation API');
+  console.log('\n# Calling experimenation API');
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
     console.log('OK');
     var json = JSON.parse(responseText);
     req.oc.privacy = json.privacy;
     next();
   }, function(status, responseText, headers) {
-    var json = JSON.parse(responseText);
-    console.log('ERROR:', json.message);
-    errorHandler(res, 400, 'BadRequest', json.message)();
-  });
+		console.log('ERROR');
+		console.log('status', status)
+		console.log('responseText', responseText);
 
+		try {
+			var json = JSON.parse(responseText);
+			console.log('Error message:', json.message);
+			errorHandler(res, 400, 'BadRequest', json.message)();
+		} catch (e) {
+			errorHandler(res)();
+			return;
+		}
+  });
 }
 
 // req.oc.sitename must be known prior from the token!

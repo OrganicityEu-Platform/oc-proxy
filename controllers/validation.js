@@ -651,11 +651,11 @@ validation.callFinalServer = function(req, res, next){
     next();
   },  function(status, responseText, headers) {
 			var json = JSON.parse(responseText);
-			if(json.error === 'NotFound') {
-				errorHandler(res, 400, 'Noz found', json.description)();
-				return;
+			if(json.error && json.description) {
+				errorHandler(res, status, json.error, json.description)();
+			} else {
+				errorHandler(res)();
 			}
-			errorHandler(res)();
 	});
 };
 

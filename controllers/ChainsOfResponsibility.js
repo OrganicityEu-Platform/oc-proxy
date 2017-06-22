@@ -114,7 +114,7 @@ var ChainsOfResponsibility = (function() {
 
         validation.callFinalServer,
         validation.callNotificationProxy,
-//        validation.increaseExperimentQuota,
+        validation.increaseExperimentQuota,
         validation.sendResponse
       ],
       get : [

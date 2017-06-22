@@ -68,6 +68,9 @@ var errorHandler = function(res, code, type, msg) {
 
 validation.init = function(req, res, next) {
   req.oc = {};
+	res.oc = {
+		headers : { }
+	};
   next();
 };
 
@@ -656,8 +659,16 @@ validation.callFinalServer = function(req, res, next){
       responseText : responseText
     }
     next();
-  },  function(status, responseText, headers) {
-			var json = JSON.parse(responseText);
+  }, function(status, responseText, headers) {
+			console.log('ERROR: Calling the final server failed!')
+			console.log('status', status);
+			console.log('responseText', responseText);
+
+			var json = {};
+			try {
+				json = JSON.parse(responseText);
+			} catch (e) {}
+
 			if(json.error && json.description) {
 				errorHandler(res, status, json.error, json.description)();
 			} else {
@@ -732,11 +743,14 @@ validation.increaseExperimentQuota = function(req, res, next) {
       'authorization' : 'Bearer ' + req.oc.access_token
     }
   };
+	
+	console.log(optionsCall);
 
-  httpClient.sendData(optionsCall, undefined, res, function() {
+  httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
     console.log('INCREASE OKAY!', responseText);
 
     var json = JSON.parse(responseText);
+		console.log(res.oc);
     res.oc.headers['X-remainingQuota'] = json.remainingQuota;
 
     next();

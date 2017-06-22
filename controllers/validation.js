@@ -748,7 +748,6 @@ validation.increaseExperimentQuota = function(req, res, next) {
     console.log('INCREASE OKAY!', responseText);
 
     var json = JSON.parse(responseText);
-		console.log(res.oc);
     res.oc.headers['X-remainingQuota'] = json.remainingQuota;
 
     next();

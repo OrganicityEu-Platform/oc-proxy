@@ -743,8 +743,6 @@ validation.increaseExperimentQuota = function(req, res, next) {
       'authorization' : 'Bearer ' + req.oc.access_token
     }
   };
-	
-	console.log(optionsCall);
 
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
     console.log('INCREASE OKAY!', responseText);

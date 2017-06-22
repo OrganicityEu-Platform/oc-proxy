@@ -281,16 +281,22 @@ validation.getAccessToken = function(req, res, next) {
 + sub -- subscriber in the header
 + expId -- experiment ID
 + appId -- application ID
-+ cliID -- client ID
++ cliID -- client ID, or 0 if no client is used
 + owner -- main experimenter (what goes on the asset ID)
 
 */
 validation.canCreateAsset = function(req, res, next) {
+
+	var clientId = 0;
+	if(req.token.clientId) {
+		clientId = req.token.clientId;
+	}
+
   var optionsCall = {
     protocol: config.experiment_management_api.protocol,
     host: config.experiment_management_api.host,
     port: config.experiment_management_api.port,
-    path: '/emscheck/can-create-asset/' + req.token.sub + '/' + req.oc.expid + '/' + req.oc.appid + '/' + req.token.clientId + '/' + req.oc.main_experimenter_id,
+    path: '/emscheck/can-create-asset/' + req.token.sub + '/' + req.oc.expid + '/' + req.oc.appid + '/' + clientId + '/' + req.oc.main_experimenter_id,
     method: 'GET',
     headers : {
       'authorization' : 'Bearer: ' + req.oc.access_token

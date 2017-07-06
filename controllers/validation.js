@@ -607,7 +607,8 @@ validation.checkValidityOfAssetType = function(req, res, next) {
       var assetName = asset_type.substring(allowedPrefix.length);
 
 			if(assetName.length === 0) {
-			    errorHandler(res, 400, 'BadRequest', 'Asset.type empty after the prefix')();
+				errorHandler(res, 400, 'BadRequest', 'Asset.type empty after the prefix')();
+				return;
 			}
 
 			console.log('Asset type unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');

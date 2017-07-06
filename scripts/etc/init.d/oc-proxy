@@ -7,7 +7,7 @@
 
 export NAME=oc-proxy
 export SOURCE_DIR=/opt/oc-proxy
-export SCRIPT=server.js
+export SCRIPT=oc-proxy.js
 export LOG_DIR=/var/log/organicity
 export PROCESSES_DIR=/opt/processes
 export PID_FILE=oc-proxy.pid

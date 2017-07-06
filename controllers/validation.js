@@ -630,7 +630,7 @@ validation.checkValidityOfAssetType = function(req, res, next) {
         // Push unregisteredassettype was successful
         next();
       },function(status, responseText, headers) {
-				if(status === 400) {
+				if(status === 412) {
 					errorHandler(res, 400, 'BadRequest', 'Asset.type not allowed!')();
 				} else {
 					errorHandler(res)();

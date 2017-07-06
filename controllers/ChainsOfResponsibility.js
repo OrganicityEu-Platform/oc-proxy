@@ -18,7 +18,6 @@ var ChainsOfResponsibility = (function() {
         validation.checkValidityOfSiteAssetIdFromBody,
         validation.checkValidityOfAssetTimeInstant,
         validation.doesSiteHaveQuota,
-        validation.addSitePrivacy,
         validation.callFinalServer,
         //validation.decreaseSiteQuota,
         validation.sendResponse
@@ -32,7 +31,7 @@ var ChainsOfResponsibility = (function() {
         validation.getAccessToken,
         validation.checkValidityOfSiteAssetIdFromParam,
         validation.callFinalServer,
-        validation.increaseSiteQuota,
+        //validation.increaseSiteQuota,
         validation.sendResponse
       ],
       get : [
@@ -58,7 +57,6 @@ var ChainsOfResponsibility = (function() {
         validation.checkForNonAllowedAttribute('id'),
         validation.checkForNonAllowedAttribute('type'),
         validation.checkValidityOfAssetTimeInstant,
-        validation.addSitePrivacy,
         validation.callFinalServer,
         validation.sendResponse
       ],
@@ -89,7 +87,6 @@ var ChainsOfResponsibility = (function() {
         validation.checkValidityOfAssetTimeInstant,
 
         validation.addFiWareSignature,
-        validation.addExperimenterSitePrivacy,
 
         validation.callFinalServer,
         validation.decreaseExperimentQuota,
@@ -158,7 +155,6 @@ var ChainsOfResponsibility = (function() {
         validation.checkValidityOfAssetTimeInstant,
 
         validation.addFiWareSignature,
-        validation.addExperimenterSitePrivacy,
 
         validation.callFinalServer,
         validation.fixLocationHeader,

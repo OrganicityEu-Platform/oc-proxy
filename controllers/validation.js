@@ -308,9 +308,7 @@ validation.canCreateAsset = function(req, res, next) {
 
   console.log('\n# Calling experimenation API');
   httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-    console.log('OK');
-    var json = JSON.parse(responseText);
-    req.oc.privacy = json.privacy;
+    console.log('The User is allowed to work with the assetid');
     next();
   }, function(status, responseText, headers) {
 		console.log('ERROR');
@@ -608,7 +606,11 @@ validation.checkValidityOfAssetType = function(req, res, next) {
       // Remove the prefix before posting
       var assetName = asset_type.substring(allowedPrefix.length);
 
-      console.log('Asset type unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
+			if(assetName.length === 0) {
+			    errorHandler(res, 400, 'BadRequest', 'Asset.type empty after the prefix')();
+			}
+
+			console.log('Asset type unknown. Inform `OrganiCity Platform Management API` about the new asset type: `', assetName, '`');
 
       var optionsCall = {
         protocol: config.facility_management_api.protocol,
@@ -622,14 +624,18 @@ validation.checkValidityOfAssetType = function(req, res, next) {
         }
       };
 
-      var newAsset = {
-        name: assetName
-      };
+      var newAsset = { name: assetName };
 
       httpClient.sendData(optionsCall, JSON.stringify(newAsset), res, function(status, responseText, headers) {
         // Push unregisteredassettype was successful
         next();
-      }, errorHandler(res));
+      },function(status, responseText, headers) {
+				if(status === 400) {
+					errorHandler(res, 400, 'BadRequest', 'Asset.type not allowed!')();
+				} else {
+					errorHandler(res)();
+				}
+      })
     }
   }, errorHandler(res));
 };
@@ -824,82 +830,6 @@ validation.decreaseSiteQuota = function(req, res, next) {
   httpClient.sendData(optionsCall, undefined, res, function() {
     next();
   });
-};
-
-validation.addExperimenterSitePrivacy = function(req, res, next) {
-  console.log('\n### Add Experimenter Site Privacy');
-
-  if(req.oc.sitename === 'experimenters') {
-    privacy = req.oc.privacy;
-  } else {
-    privacy = 'public';
-  }
-
-  req.oc.asset['access:scope'] = {
-    "type": "urn:oc:attributeType:access:scope",
-    "value": privacy
-  }
-  next();
-};
-
-
-/*
- * Used by central site
- */
-validation.addSitePrivacy = function(req, res, next) {
-  console.log('\n### Add Site Privacy');
-
-  // Site can add the scope
-  if(req.oc.asset['access:scope']) {
-    // Check if the scobe has the correct format
-    if( req.oc.asset['access:scope'].type === "urn:oc:attributeType:access:scope"
-        &&
-        (req.oc.asset['access:scope'].value === "private" || req.oc.asset['access:scope'].value === "public")
-    ) {
-      console.log('Skip adding privacy, since it is provided in the asset.');
-      return next();
-    }
-  }
-
-  // if scope is missed or wrong, lets add it
-  var addPrivacy = function (privacy) {
-    req.oc.asset['access:scope'] = {
-      "type": "urn:oc:attributeType:access:scope",
-      "value": privacy
-    }
-    next();
-  }
-
-  if(req.oc.sitename === 'experimenters') {
-    // get /emscheck/assets-public/{expId}
-    console.log('Get privacy from Experimentation API');
-    var assetId = req.oc.assetId;
-    var assetIdParts = assetId.split(':');
-    var expId = assetIdParts[5];
-
-    var optionsCall = {
-      protocol: config.experiment_management_api.protocol,
-      host: config.experiment_management_api.host,
-      port: config.experiment_management_api.port,
-      path: '/emscheck/assets-public/' + expId,
-      method: 'GET',
-      headers : {
-        'authorization' : 'Bearer: ' + req.oc.access_token
-      }
-    };
-
-    httpClient.sendData(optionsCall, undefined, res, function(status, responseText, headers) {
-      // The experiment has _public_ assets
-      addPrivacy('public');
-    }, function(status, responseText, headers) {
-      // The experiment has _private_ assets
-      addPrivacy('private');
-    });
-
-  } else {
-    console.log('privacy is public!');
-    addPrivacy('public');
-  }
 };
 
 validation.fixLocationHeader = function(req, res, next) {

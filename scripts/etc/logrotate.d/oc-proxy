@@ -1,0 +1,13 @@
+/var/log/organicity/oc-proxy.out
+/var/log/organicity/oc-proxy.err
+{
+  daily
+  rotate 10
+  copytruncate
+  nocompress
+  notifempty
+  missingok
+
+  dateext
+  dateformat -%Y-%m-%d
+}

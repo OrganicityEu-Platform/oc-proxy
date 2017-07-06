@@ -4,17 +4,18 @@
 
 ```
 cd /opt
-git clone git@github.com:OrganicityEu-Platform/oc-proxy.git
+git clone https://github.com/OrganicityEu-Platform/oc-proxy.git
 cd oc-proxy
 cp config.template.js config.js
 # Configure the application_endpoint
 npm install
 ```
 
-Copy script:
+Link startup script and the log rotate (Like this, the script are kept up to date with git changes):
 
 ```
-cp scripts/etc/init.d/oc-proxy /etc/init.d/
+ln -s /opt/oc-proxy/scripts/etc/init.d/oc-proxy /etc/init.d/oc-proxy
+ln -s /opt/oc-proxy/scripts/etc/logrotate.d/oc-proxy /etc/logrotate.d/oc-proxy
 ```
 
 ## Run manually
@@ -23,7 +24,6 @@ cp scripts/etc/init.d/oc-proxy /etc/init.d/
 /etc/init.d/oc-proxy start
 /etc/init.d/oc-proxy stop
 /etc/init.d/oc-proxy restart
-
 /etc/init.d/oc-proxy status
 ```
 

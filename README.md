@@ -7,7 +7,7 @@ cd /opt
 git clone https://github.com/OrganicityEu-Platform/oc-proxy.git
 cd oc-proxy
 cp config.template.js config.js
-# Configure the application_endpoint
+# Configure the application (chain, client_id and client_secret, application_endpoint and nofification_proxy)
 npm install
 ```
 
@@ -65,3 +65,8 @@ Verify:
 chkconfig --list oc-proxy
 ```
 
+## Test logrotate
+
+```
+logrotate --force /etc/logrotate.d/oc-proxy
+```

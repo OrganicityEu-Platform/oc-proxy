@@ -40,6 +40,13 @@ config.experiment_management_api = {
 	port: '8081',
 }
 
+// Needed for central only
+//config.nofification_proxy = {
+//	protocol: 'http',
+//	host: 'localhost',
+//	port: 9998
+//};
+
 // list of paths that will not check authentication/authorization
 // example: ['/public/*', '/static/css/']
 config.public_paths = [];

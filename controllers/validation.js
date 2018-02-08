@@ -287,8 +287,7 @@ validation.getAccessToken = function(req, res, next) {
         var token = JSON.parse(responseText);
         req.oc.access_token = token.access_token;
         console.log(req.oc.access_token);
-        redis.setex("oc.accessToken", timeAccessToken, token.access_token, done);
-        return done();
+        redis.setex("oc.accessToken", timeAccessToken, token.access_token, done); // Calls done
       },function(status, resp) {
         unlock();
         errorHandler(res)(status, resp);

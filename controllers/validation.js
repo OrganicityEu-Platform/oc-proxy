@@ -870,7 +870,7 @@ validation.sendResponse = function(req, res, next) {
   }
 
   if(!res.oc.responseText) {
-    res.send();
+    res.send('');
   } else {
     res.send(res.oc.responseText);
   }

@@ -229,6 +229,7 @@ validation.getAccessToken = function(req, res, next) {
 
   console.log('Get access token from cache');
   lock("oc.accessToken", function(unlock) {
+
     console.log('We got the lock!');
     var done = function() {
       console.log('Unlock');
@@ -237,42 +238,62 @@ validation.getAccessToken = function(req, res, next) {
     }
 
     redis.get("oc.accessToken", function (err, reply) {
-      if(err || !reply) {
-        console.log('No access token in cache. Renew token!');
 
-        var optionsCall = {
-          protocol: config.accounts_token_endpoint.protocol,
-          host: config.accounts_token_endpoint.host,
-          port: config.accounts_token_endpoint.port,
-          path: config.accounts_token_endpoint.path,
-          method: 'POST',
-          headers: {
-            'Content-Type' : 'application/x-www-form-urlencoded'
-          }
-        };
-
-        var payload = 'grant_type=client_credentials&client_id=' + config.client_id + '&client_secret=' + config.client_secret;
-
-        httpClient.sendData(optionsCall, payload, res, function(status, responseText, headers) {
-          var token = JSON.parse(responseText);
-          req.oc.access_token = token.access_token;
+      if(err) {
+        console.log('Redis error. Renew token!');
+      } else if (reply) {
+        // We got smth from redis
+        
+        try {
+          var decoded = jwt.verify(reply.toString(), cert);
+          var now = Math.floor(Date.now() / 1000);
+          var sec = decoded.exp - now;
+          req.oc.access_token = reply.toString();
           console.log(req.oc.access_token);
-          redis.setex("oc.accessToken", timeAccessToken, token.access_token, done);
-        },function(status, resp) {
-          unlock();
-          errorHandler(res)(status, resp);
-        });
+
+          console.log('Use access token from the cache. Expires in ', sec, 's');
+          return done();
+
+        }
+        catch (e) {
+          console.log('Access token expired. Renew token!');
+          console.log(e);
+        }
 
       } else {
-        var decoded = jwt.verify(reply.toString(), cert);
-        var now = Math.floor(Date.now() / 1000);
-        var sec = decoded.exp - now;
-        console.log('Use access token from the cache. Expires in ', sec, 's');
-
-        req.oc.access_token = reply.toString();
-        console.log(req.oc.access_token);
-        done();
+        // No error and no reply
+        console.log('No access token in cache. Renew token!');
       }
+
+      // This code is reached, if 
+      // a) redis throws an error
+      // b) The token validation failed
+      // c) redis does not have any token (anymore)
+
+      var optionsCall = {
+        protocol: config.accounts_token_endpoint.protocol,
+        host: config.accounts_token_endpoint.host,
+        port: config.accounts_token_endpoint.port,
+        path: config.accounts_token_endpoint.path,
+        method: 'POST',
+        headers: {
+          'Content-Type' : 'application/x-www-form-urlencoded'
+        }
+      };
+
+      var payload = 'grant_type=client_credentials&client_id=' + config.client_id + '&client_secret=' + config.client_secret;
+
+      httpClient.sendData(optionsCall, payload, res, function(status, responseText, headers) {
+        var token = JSON.parse(responseText);
+        req.oc.access_token = token.access_token;
+        console.log(req.oc.access_token);
+        redis.setex("oc.accessToken", timeAccessToken, token.access_token, done);
+        return done();
+      },function(status, resp) {
+        unlock();
+        errorHandler(res)(status, resp);
+      });
+
     }); // get
   }); // lock
 };

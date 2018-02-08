@@ -868,7 +868,12 @@ validation.sendResponse = function(req, res, next) {
       var header = res.oc.headers[idx];
       res.setHeader(idx, res.oc.headers[idx]);
   }
-  res.send(res.oc.responseText);
+
+  if(!res.oc.responseText) {
+    res.send();
+  } else {
+    res.send(res.oc.responseText);
+  }
 };
 
 validation.status = function(req, res, next) {

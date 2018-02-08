@@ -585,7 +585,7 @@ validation.checkValidityOfAssetType = function(req, res, next) {
   var allowedPrefix = 'urn:oc:entityType:';
 
   // (e) Check, if the prefix of the asset is correct
-  if(!asset_type.startsWith(allowedPrefix)) {
+  if(!asset_type || !asset_type.startsWith(allowedPrefix)) {
     errorHandler(res, 400, 'BadRequest', 'asset.type prefix must be ' + allowedPrefix)();
     return;
   }
